@@ -1,0 +1,28 @@
+<html>
+  <head>
+    <title>Flask Intro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
+  </head>
+  <body>
+    <div class="container">
+      <h1>The Idea Turing Test!</h1>
+      <br>
+      <p>Click <a href="/logout">here</a> to logout.</p>
+      <p>Click <a href="/logout">here</a> to go to the about page.</p>
+      <br><br>
+      <h3>Vote on the best arguments against the Minimum wage:</h3>
+      {% for argument in arguments %}
+        <strong>Abstract:</strong> {{ argument.abstract }} <br>
+        <strong>Argument:</strong> {{ argument.description }} <br>
+      <br>
+      {% endfor %}
+      {% if error %}
+        <p class="error"><strong>Error:</strong> {{ error }}</p>
+      {% endif %}
+      {% for message in get_flashed_messages() %}
+        {{ message }}
+      {% endfor %}
+    </div>
+  </body>
+</html>
