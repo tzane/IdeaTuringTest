@@ -1,0 +1,28 @@
+<html>
+  <head>
+    <title>Idea Turing Test - registration page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
+  </head>
+  <body>
+    <div class="container">
+      <h1>Registration</h1>
+      <br>
+      <form action="" method="post">
+        <div>
+        <input type="text" placeholder="Name" name="name" value="{{ 
+          request.form.name }}">
+        </div>
+        <div>
+         <input type="text" placeholder="E-mail" name="email" value="{{ 
+          request.form.email }}">
+        </div>
+        <div>
+         <input type="password" placeholder="Password" name="password" value="{{ 
+          request.form.password }}">
+        </div>
+        <input class="btn btn-default" type="submit" value="Register">
+      </form>
+    </div>
+  </body>
+</html>

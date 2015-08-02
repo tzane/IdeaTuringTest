@@ -1,11 +1,20 @@
 from flask import Flask, render_template, redirect, url_for, request, session, flash, g
+from flask.ext.sqlalchemy import SQLAlchemy
 from functools import wraps
-import sqlite3
+# import sqlite3
 
 app = Flask(__name__)
 
+import os
+
 app.secret_key = "my precious"
-app.database = "sample.db"
+# app.database = "sample.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///arguments.db'
+
+# create the sqlalchemy object
+db = SQLAlchemy(app)
+
+from models import *
 
 @app.route('/about')
 def about():
@@ -13,6 +22,17 @@ def about():
     Needs to return about.html
     """
     return "This is the about page!"
+    
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        user = User(request.form['name'], request.form['email'],
+                    request.form['password'])
+        db.session.add(user)
+        db.session.commit()
+        flash('Thanks for registering')
+        return redirect(url_for('login'))
+    return render_template('register.html')
 
 def login_required(f):
     @wraps(f)
@@ -27,10 +47,7 @@ def login_required(f):
 @app.route('/')
 @login_required    
 def home():
-    g.db = connect_db()
-    pro_query = g.db.execute('select argument_abstract, argument from arguments;')
-    arguments = [dict(abstract=row[0], description=row[1]) for row in pro_query.fetchall()]
-    g.db.close()
+    arguments = db.session.query(ArgumentPost).all()
     return render_template("index.html", arguments=arguments)
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -52,8 +69,8 @@ def logout():
     flash('You were just logged out!')
     return redirect(url_for('about'))    
 
-def connect_db():
-    return sqlite3.connect(app.database)    
+# def connect_db():
+    # return sqlite3.connect(app.database)    
     
 if __name__ == '__main__':
     app.run(debug=True)

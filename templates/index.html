@@ -11,10 +11,10 @@
       <p>Click <a href="/logout">here</a> to logout.</p>
       <p>Click <a href="/logout">here</a> to go to the about page.</p>
       <br><br>
-      <h3>Vote on the best arguments against the Minimum wage:</h3>
+      <h3>Vote on the best arguments <strong>against</strong> a Federal Minimum Wage of $15/hour:</h3>
       {% for argument in arguments %}
         <strong>Abstract:</strong> {{ argument.abstract }} <br>
-        <strong>Argument:</strong> {{ argument.description }} <br>
+        <strong>Argument:</strong> {{ argument.argument }} <br>
       <br>
       {% endfor %}
       <p><strong>Which argument do you think is the opposite number?</strong></p>
