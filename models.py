@@ -1,4 +1,4 @@
-from app import db
+from app import db, bcrypt
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
@@ -40,9 +40,25 @@ class User(db.Model):
     def __init__(self, name, email, password):
         self.name = name
         self.email = email
-        self.password = password
+        self.password = bcrypt.generate_password_hash(password)
         
     def __repr__(self):
         return '<name {}'.format(self.name)
+
+        
+class Vote(db.Model):
+
+    __tablename__ = "votes"
+    
+    id = db.Column(db.Integer, primary_key=True)
+    argument_id = db.Column(db.Integer, ForeignKey('arguments.id'))
+    value = db.Column(db.Integer, nullable=False)
+    voter_id =  db.Column(db.Integer, ForeignKey('users.id'))
+    
+    def __init__(self, value):
+        self.value = value
+        
+    def __repr__(self):
+        return '<name {}'.format(self.value)
     
     
