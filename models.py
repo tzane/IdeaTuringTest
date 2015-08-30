@@ -55,8 +55,11 @@ class Vote(db.Model):
     value = db.Column(db.Integer, nullable=False)
     voter_id =  db.Column(db.Integer, ForeignKey('users.id'))
     
-    def __init__(self, value):
+    def __init__(self, argument_id, value, voter_id):
+        self.argument_id = argument_id
         self.value = value
+        self.voter_id = voter_id
+        
         
     def __repr__(self):
         return '<name {}'.format(self.value)

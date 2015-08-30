@@ -18,6 +18,11 @@ db.session.add(User("Tyler", "ty@tyler.com", "password"))
 db.session.add(User("Kevin", "kev@kevin.com", "password"))
 db.session.add(User("David","dav@david.com", "test"))
 
-
+db.session.add(Vote(2, 8, 1))
+db.session.add(Vote(3, 5, 1))
+db.session.add(Vote(4, 9, 1))
+db.session.add(Vote(1, 1, 2))
+db.session.add(Vote(3, 4, 2))
+db.session.add(Vote(4, 10, 2))
 #commit
 db.session.commit()

@@ -68,9 +68,12 @@ def add_arguments():
 @login_required    
 def home():
     if request.method == 'POST':
-        # Need to get vote values from POST request
-        # See 'index.html'
-        print "do something"
+        argument_ids = session['argument_ids']
+        votes = request.form.getlist('vote_value')
+        for position, vote in enumerate(votes):
+            vote_record = Vote(argument_ids[position], int(vote), int(session['user_id']))
+            db.session.add(vote_record)
+        db.session.commit()
     user_argument = db.session.query(ArgumentPost).filter_by(topic="The federal government should impose a national $15/hr minimum wage.",id=session['user_id']).first()
     if user_argument.user_procon == True:
         user_status = True
@@ -80,6 +83,7 @@ def home():
         displayable_arguments = db.session.query(ArgumentPost).filter_by(procon_topic=False).all()
     userless_arguments = [argument for argument in displayable_arguments if argument.author_id != session['user_id']]  
     arguments = random.sample(userless_arguments, 3)
+    session['argument_ids'] = [argument.id for argument in arguments]
     return render_template("index.html", user_status=user_status, arguments=arguments)
 
 @app.route('/login', methods=['GET', 'POST'])    

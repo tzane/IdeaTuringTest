@@ -6,7 +6,7 @@
   </head>
   <body>
     <div class="container">
-      <h1>The Idea Turing Test</h1>
+      <h1>The Political Turing Test</h1>
       <br>
       <p>{% for message in get_flashed_messages() %}
            {{ message }}
@@ -14,39 +14,38 @@
       </p>
       <p>Click <a href="/logout">here</a> to logout.</p>
       <p>Click <a href="/logout">here</a> to go to the about page.</p>
+      <p>Click <a href="/arguments">here</a> to add arguments or view how your arguments are scoring.</p>
       <br><br>
       {% if user_status %}
       <h3>Vote on the best arguments <strong>for</strong> a Federal Minimum Wage of $15/hour:</h3>
       {% else %}
       <h3>Vote on the best arguments <strong>against</strong> a Federal Minimum Wage of $15/hour:</h3>
       {% endif %}
+      <form action="" method="post">
       {% for argument in arguments %}
         <strong>Abstract:</strong> {{ argument.abstract }} <br>
         <strong>Argument:</strong> {{ argument.argument }} <br>
-        <form action="" method="post">
           <div class="form-group">
             <select name="vote_value">
               <label for="vote">Vote:</label>
-              <option value="one">1</option>
-              <option value="two">2</option>
-              <option value="three">3</option>
-              <option value="four">4</option>
-              <option value="five">5</option>
-              <option value="six">6</option>
-              <option value="seven">7</option>
-              <option value="eight">8</option>
-              <option value="nine">9</option>
-              <option value="ten">10</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
             </select>
           </div>
-        </form>
-      <br>
       {% endfor %}
-      <form action="" method="post">
-        <div class="col-sm-offset-2 col-sm-10">
-              <button class="btn btn-primary" type="submit">Submit</button>
-        </div>
+      
+        <button class="btn btn-primary" type="submit">Submit</button>
+
       </form>
+
       <p><strong>Which argument do you think is the opposite number?</strong></p>
       {% if error %}
         <p class="error"><strong>Error:</strong> {{ error }}</p>
