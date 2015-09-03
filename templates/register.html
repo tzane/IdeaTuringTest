@@ -6,8 +6,10 @@
   </head>
   <body>
     <div class="container">
-      <h1>Registration</h1>
+      <h1>The Political Turing Test
       <br>
+      <h2>Registration</h2>
+
       <form action="" method="post">
         <div>
         <input type="text" placeholder="Name" name="name" value="{{ 
@@ -26,6 +28,8 @@
       {% for message in get_flashed_messages() %}
         {{ message }}
       {% endfor %}
+      <p>Click <a href="/login">here</a> to login if you already have an account.</p>
+      <p>Click <a href="/">here</a> to return home.</p>
     </div>
   </body>
 </html>

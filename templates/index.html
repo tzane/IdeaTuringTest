@@ -13,14 +13,15 @@
          {% endfor %}
       </p>
       <p>Click <a href="/logout">here</a> to logout.</p>
-      <p>Click <a href="/logout">here</a> to go to the about page.</p>
+      <p>Click <a href="/">here</a> to go to the home page.</p>
       <p>Click <a href="/arguments">here</a> to add arguments or view how your arguments are scoring.</p>
       <br><br>
       {% if user_status %}
-      <h3>Vote on the best arguments <strong>for</strong> a Federal Minimum Wage of $15/hour:</h3>
+      <h2>Vote on the best arguments <strong>for</strong> a Federal Minimum Wage of $15/hour:</h3>
       {% else %}
-      <h3>Vote on the best arguments <strong>against</strong> a Federal Minimum Wage of $15/hour:</h3>
+      <h2>Vote on the best arguments <strong>against</strong> a Federal Minimum Wage of $15/hour:</h3>
       {% endif %}
+      <br><br>
       <form action="" method="post">
       {% for argument in arguments %}
         <strong>Abstract:</strong> {{ argument.abstract }} <br>
@@ -45,8 +46,6 @@
         <button class="btn btn-primary" type="submit">Submit</button>
 
       </form>
-
-      <p><strong>Which argument do you think is the opposite number?</strong></p>
       {% if error %}
         <p class="error"><strong>Error:</strong> {{ error }}</p>
       {% endif %}

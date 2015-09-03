@@ -6,8 +6,9 @@
   </head>
   <body>
     <div class="container">
-      <h1>Please login</h1>
+      <h1>The Political Turing Test</h1>
       <br>
+      <h2>Please login</h2>
       <form action="" method="post">
         <input type="text" placeholder="Username" name="username" value="{{ 
           request.form.username }}">
@@ -21,6 +22,8 @@
       {% for message in get_flashed_messages() %}
         {{ message }}
       {% endfor %}
+      <p><p>Click <a href="/register">here</a> to register if you do not have an account.</p>
+      <p><p>Click <a href="/">here</a> to return home.</p>
     </div>
   </body>
 </html>

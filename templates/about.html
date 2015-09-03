@@ -1,0 +1,32 @@
+<html>
+  <head>
+    <title>Flask Intro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
+  </head>
+  <body>
+    <div class="container">
+      <h1>The Political Turing Test</h1>
+    </div>
+    <div class="container">
+      <h3>About</h3>
+      <p>Something something</p>
+    </div>
+    <div class="container">
+    <p>{% for message in get_flashed_messages() %}
+           {{ message }}
+         {% endfor %}
+    </p>
+    </div>
+    <div class="container">
+    {% if user_status %}
+    <p>Click <a href="/logout">here</a> to logout.</p>
+    <p>Click <a href="/voting">here</a> to vote on arguments.</p>
+    <p>Click <a href="/arguments">here</a> to add arguments or view how your arguments are scoring.</p>
+    {% else %}
+    <p>Click <a href="/login">here</a> to login or click <a href="/register">here</a> to register.</p>
+    {% endif %}
+
+    </div>
+  </body>
+</html>  

@@ -1,5 +1,5 @@
 from app import db, bcrypt
-from models import ArgumentPost, User
+from models import ArgumentPost, User, Vote
 
 db.create_all()
 
