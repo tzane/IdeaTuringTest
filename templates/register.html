@@ -26,7 +26,7 @@
         <input class="btn btn-default" type="submit" value="Register">
       </form>
       {% for message in get_flashed_messages() %}
-        {{ message }}
+        <strong><i>--{{ message }}--</i></strong>
       {% endfor %}
       <p>Click <a href="/login">here</a> to login if you already have an account.</p>
       <p>Click <a href="/">here</a> to return home.</p>

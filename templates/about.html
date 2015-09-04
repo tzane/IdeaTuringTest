@@ -10,11 +10,17 @@
     </div>
     <div class="container">
       <h3>About</h3>
-      <p>Something something</p>
+      <p>The Political Turing Test was developed as a device to promote principled debate and to assess one's ability to correctly comprehend the arguments 
+      of his or her intellectual opponents. Originally conceptualized as the <a href="https://en.wikipedia.org/wiki/Ideological_Turing_Test">"Ideological Turing Test"</a> 
+      by economist Bryan Caplan, the Political Turing Test provides an experimental framework for this concept and offers users quantifiable feedback.
+      </p>
+    </div>
+    <div class="container">
+      <p>"<i>He who knows only his own side of the case knows little of that.</i>" -John Stuart Mill</p>
     </div>
     <div class="container">
     <p>{% for message in get_flashed_messages() %}
-           {{ message }}
+           <strong><i>--{{ message }}--</i></strong>
          {% endfor %}
     </p>
     </div>

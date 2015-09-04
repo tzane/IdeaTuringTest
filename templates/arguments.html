@@ -21,8 +21,14 @@
       <h2>Add Arguments</h2>
     </div>
     <div class="container">
+      <p>{% for message in get_flashed_messages() %}
+        <strong><i>--{{ message }}--</i></strong>
+      {% endfor %}
+      </p>
+    </div>
+    <div class="container">
       <p>Click <a href="/logout">here</a> to logout.</p>
-      <p>Click <a href="/logout">here</a> to return home.</p>
+      <p>Click <a href="/">here</a> to return home.</p>
     </div>
     <div class="container">
       <br>
@@ -66,8 +72,5 @@
           </div>
         </div>
       </form>
-      {% for message in get_flashed_messages() %}
-        {{ message }}
-      {% endfor %}
   </body>
 </html>

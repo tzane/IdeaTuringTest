@@ -9,7 +9,7 @@
       <h1>The Political Turing Test</h1>
       <br>
       <p>{% for message in get_flashed_messages() %}
-           {{ message }}
+           <strong><i>--{{ message }}--</i></strong>
          {% endfor %}
       </p>
       <p>Click <a href="/logout">here</a> to logout.</p>

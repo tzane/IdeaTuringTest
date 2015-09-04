@@ -20,7 +20,7 @@
         <p class="error"><strong>Error:</strong> {{ error }}</p>
       {% endif %}
       {% for message in get_flashed_messages() %}
-        {{ message }}
+        <strong><i>--{{ message }}--</i></strong>
       {% endfor %}
       <p><p>Click <a href="/register">here</a> to register if you do not have an account.</p>
       <p><p>Click <a href="/">here</a> to return home.</p>

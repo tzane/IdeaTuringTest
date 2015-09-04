@@ -61,8 +61,8 @@ def add_arguments():
     if request.method == 'POST':
         if request.form['user_stance'] == "pro":
             user_position = True
-        pro_argument = ArgumentPost("$15 Federal Minimum Wage", True, user_position, request.form['abstract'], request.form['argument'], session['user_id'])
-        con_argument = ArgumentPost("$15 Federal Minimum Wage", False, user_position, request.form['abstract1'], request.form['argument1'], session['user_id'])
+        pro_argument = ArgumentPost("The federal government should impose a national $15/hr minimum wage.", True, user_position, request.form['abstract'], request.form['argument'], session['user_id'])
+        con_argument = ArgumentPost("The federal government should impose a national $15/hr minimum wage.", False, user_position, request.form['abstract1'], request.form['argument1'], session['user_id'])
         db.session.add(pro_argument)
         db.session.add(con_argument)
         db.session.commit()
@@ -73,6 +73,9 @@ def add_arguments():
 @app.route('/voting', methods=['GET','POST'])
 @login_required    
 def voting():
+    if ArgumentPost.query.filter_by(author_id = session['user_id']).all() == []:
+        flash('You need to submit arguments before you can vote!')
+        return redirect(url_for('add_arguments'))
     if request.method == 'POST':
         argument_ids = session['argument_ids']
         votes = request.form.getlist('vote_value')
@@ -80,7 +83,7 @@ def voting():
             vote_record = Vote(argument_ids[position], int(vote), int(session['user_id']))
             db.session.add(vote_record)
         db.session.commit()
-    user_argument = db.session.query(ArgumentPost).filter_by(topic="The federal government should impose a national $15/hr minimum wage.",id=session['user_id']).first()
+    user_argument = db.session.query(ArgumentPost).filter_by(topic="The federal government should impose a national $15/hr minimum wage.",author_id=session['user_id']).first()
     if user_argument.user_procon == True:
         user_status = True
         displayable_arguments = db.session.query(ArgumentPost).filter_by(procon_topic=True).all()
@@ -88,7 +91,7 @@ def voting():
         user_status = False
         displayable_arguments = db.session.query(ArgumentPost).filter_by(procon_topic=False).all()
     userless_arguments = [argument for argument in displayable_arguments if argument.author_id != session['user_id']]  
-    arguments = random.sample(userless_arguments, 3)
+    arguments = random.sample(userless_arguments, 4)
     session['argument_ids'] = [argument.id for argument in arguments]
     return render_template("index.html", user_status=user_status, arguments=arguments)
     
@@ -147,9 +150,6 @@ def login():
 def logout():
     session.pop('logged_in', None)
     return redirect(url_for('home'))    
-
-# def connect_db():
-    # return sqlite3.connect(app.database)    
-    
+ 
 if __name__ == '__main__':
     app.run(debug=True)
