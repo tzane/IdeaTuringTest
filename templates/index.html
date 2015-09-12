@@ -2,7 +2,7 @@
   <head>
     <title>Flask Intro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet" media="screen">
   </head>
   <body>
     <div class="container">
@@ -17,9 +17,9 @@
       <p>Click <a href="/arguments">here</a> to add arguments or view how your arguments are scoring.</p>
       <br><br>
       {% if user_status %}
-      <h2>Vote on the best arguments <strong>for</strong> a Federal Minimum Wage of $15/hour:</h3>
+      <h2>Vote on the best arguments <strong><u>for</u></strong> the motion "{{ topic.topic }}"</h3>
       {% else %}
-      <h2>Vote on the best arguments <strong>against</strong> a Federal Minimum Wage of $15/hour:</h3>
+      <h2>Vote on the best arguments <strong><u>against</u></strong> the motion "{{ topic.topic }}"</h3>
       {% endif %}
       <br><br>
       <form action="" method="post">
@@ -41,14 +41,25 @@
               <option value="10">10</option>
             </select>
           </div>
-      {% endfor %}
-      
+      {% endfor %}     
         <button class="btn btn-primary" type="submit">Submit</button>
-
       </form>
       {% if error %}
         <p class="error"><strong>Error:</strong> {{ error }}</p>
       {% endif %}
     </div>
+    <div class="container">
+      <h3><strong>Vote on these other active motions by category:</strong></h3>
+    </div>
+    {% for motions in other_user_motions %}
+    <div class="container">
+      <h4>{{ motions.keys()[0] }}</h4>
+      <ul>
+        {% for motions in motions.values()[0] %}
+        <li><a href="/voting/{{ motions.id }}">{{ motions.topic }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+      {% endfor %}
   </body>
 </html>

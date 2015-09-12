@@ -2,7 +2,7 @@
   <head>
     <title>Idea Turing Test - add arguments</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet" media="screen">
     <style type="text/css">
         .argument-box {
             margin-bottom: 1em;
@@ -18,47 +18,60 @@
       <h1>The Political Turing Test</h1>
       <h2>Argument Scoring</h2>
       <p>Here's how your submitted arguments are scoring..</p>
-      {% if user_position %}
-      <label>You registered your position as <u>for</u> the motion.</label>
-      {% else %}
-      <label>You registered your position as <u>against</u> the motion.</label>
-      {% endif %}
+      <div class="container">
+          <p>Click <a href="/logout">here</a> to logout.</p>
+          <p>Click <a href="/">here</a> to return home.</p>
+          <p>Click <a href="/voting">here</a> vote on arguments.</p>
+      </div>
+      <h3>The motion: <i>"{{ current_topic.topic }}"</i></h3>
+      <label>You registered your position as <u>{{ user_position }}</u> the motion.</label>
         <div class="form-group argument-box clearfix">
-          <h3 class="argument-box-header">Your 'pro' argument <strong>for</strong> a Federal Minimum Wage of $15/hour:</h3>
+          <h3 class="argument-box-header">Your 'pro' argument <strong>for</strong> the motion:</h3>
         </div>
         <div class="form-group argument-box clearfix">
-          <strong>Abstract:</strong> {{ user_pro_argument.abstract }}
+          <strong>Abstract:</strong> {{ user_proargument.abstract }}
         </div>
         <div class="form-group argument-box clearfix">
-          <strong>Argument:</strong> {{ user_pro_argument.argument }}
-        </div>
-        <div class="form-group argument-box clearfix">
-          <ul>
-              <li>Total votes: {{ user_pro_votes }} </li>
-              <li>Average score (out of 10): {{ user_pro_score }} </li>
-          </ul>
-        </div>
-        <div class="form-group argument-box clearfix">
-          <h3 class="argument-box-header">Your 'con' argument <strong>against</strong> a Federal Minimum Wage of $15/hour:</h3>
-        </div>
-        <div class="form-group argument-box clearfix">
-          <strong>Abstract:</strong> {{ user_con_argument.abstract }}
-        </div>
-        <div class="form-group argument-box clearfix">
-          <strong>Argument:</strong> {{ user_con_argument.argument }}
+          <strong>Argument:</strong> {{ user_proargument.argument }}
         </div>
         <div class="form-group argument-box clearfix">
           <ul>
-              <li>Total votes: {{ user_con_votes }} </li>
-              <li>Average score (out of 10): {{ user_con_score }} </li>
+              <li>Total votes: {{ user_proargument_votes }} </li>
+              <li>Average score (out of 10): {{ user_proargument_avgvotes }} </li>
           </ul>
         </div>
         <div class="form-group argument-box clearfix">
-          <h4>Users holding the opposite position had an average score of <strong>{{ opposite_average_score }}</strong> on their "turing argument" with a total of <strong>{{ opposite_total_votes }}</strong> votes among that group.</h4>
+          <h3 class="argument-box-header">Your 'con' argument <strong>against</strong> the motion:</h3>
         </div>
-        <p>Click <a href="/logout">here</a> to logout.</p>
-        <p>Click <a href="/">here</a> to return home.</p>
-        <p>Click <a href="/voting">here</a> vote on arguments.</p>
+        <div class="form-group argument-box clearfix">
+          <strong>Abstract:</strong> {{ user_conargument.abstract }}
+        </div>
+        <div class="form-group argument-box clearfix">
+          <strong>Argument:</strong> {{ user_conargument.argument }}
+        </div>
+        <div class="form-group argument-box clearfix">
+          <ul>
+              <li>Total votes: {{ user_conargument_votes  }} </li>
+              <li>Average score (out of 10): {{ user_conargument_avgvotes  }} </li>
+          </ul>
+        </div>
+        <div class="form-group argument-box clearfix">
+          <h4>The average score of your 'turing argument' was higher than <strong>{{ percentile_ranking }}</strong> of those who wrote 'turing arguments' 
+          from the opposite position. Users writing 'turing arguments' from the opposite position had a total of <strong>{{ other_turing_votes }}</strong> votes among that group.</h4>
+        </div>
     </div>
+    <div class="container">
+      <h3><strong>Review the scoring of your arguments on other motions you've submitted arguments for:</strong></h3>
+    </div>
+    {% for motions in other_user_motions %}
+    <div class="container">
+      <h4>{{ motions.keys()[0] }}</h4>
+      <ul>
+        {% for motions in motions.values()[0] %}
+        <li><a href="/scoring/{{ motions.id }}">{{ motions.topic }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+      {% endfor %}
   </body>
 </html>
