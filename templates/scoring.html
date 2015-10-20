@@ -21,7 +21,8 @@
       <div class="container">
           <p>Click <a href="/logout">here</a> to logout.</p>
           <p>Click <a href="/">here</a> to return home.</p>
-          <p>Click <a href="/voting">here</a> vote on arguments.</p>
+          <p>Click <a href="/voting/{{ randnum }}">here</a> vote on arguments.</p>
+          <p>Click <a href="/turingarguments/topic/{{ randnum }}/topscoring">here</a> to view the highest rated turing arguments.</p>
       </div>
       <h3>The motion: <i>"{{ current_topic.topic }}"</i></h3>
       <label>You registered your position as <u>{{ user_position }}</u> the motion.</label>
@@ -56,8 +57,9 @@
           </ul>
         </div>
         <div class="form-group argument-box clearfix">
-          <h4>The average score of your 'turing argument' was higher than <strong>{{ percentile_ranking }}</strong> of those who wrote 'turing arguments' 
-          from the opposite position. Users writing 'turing arguments' from the opposite position had a total of <strong>{{ other_turing_votes }}</strong> votes among that group.</h4>
+          <h4>The average score of your 'turing argument' was higher than <strong>{{ percentile_ranking }}%</strong> of those who wrote 'turing arguments' 
+          from the opposite position. 68% of the users writing 'turing arguments' from the opposite position had averages scores between {{ opp_lower_bound }} and {{ opp_upper_bound }} 
+          with a total of <strong>{{ other_turing_votes }}</strong> votes.</h4>
         </div>
     </div>
     <div class="container">

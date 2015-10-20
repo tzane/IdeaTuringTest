@@ -1,0 +1,94 @@
+<html>
+  <head>
+    <title>Idea Turing Test - add arguments</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet" media="screen">
+    <style type="text/css">
+        .argument-box {
+            margin-bottom: 1em;
+        }
+        
+        .argument-box-header {
+            text-align: center;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>The Political Turing Test</h1>
+      <h2>Top Turing Arguments</h2>
+      <p>Here's the highest rated turing arguments for each side..</p>
+      <div class="container">
+          <p>Click <a href="/logout">here</a> to logout.</p>
+          <p>Click <a href="/">here</a> to return home.</p>
+          <p>Click <a href="/arguments">here</a> to add your arguments to a new debate.</p>
+          <p>Click <a href="/voting/{{ randnum }}">here</a> vote on arguments.</p>
+          <p>Click <a href="/scoring/{{ user_randtop }}">here</a> to view how your arguments are scoring.</p>
+      </div>
+      <h3>The motion: <i>"{{ current_topic.topic }}"</i></h3>
+        <form action="" method="get">
+        <h4>Rank by top:</h4>
+        <div class="form-group">
+          <button class="btn btn-primary" type="submit">Filter</button>
+          <select name="ranking">
+            <label for="category">Category</label>
+            <option value="1">Highest</option>
+            <option value="2">Top 2</option>
+            <option value="3">Top 3</option>
+            <option value="4">Top 4</option>
+            <option value="5">Top 5</option>
+          </select>
+        </div>
+        </form>
+        <div class="form-group argument-box clearfix">
+          <h3 class="argument-box-header">Top {{ ranking }} rated turing arguments <strong>for</strong> the motion:</h3>
+        </div>
+        {% for arg in con_args %}
+        <h4><i># {{ arg[0] }}</i></h4>
+        <div class="form-group argument-box clearfix">
+          <strong>Abstract:</strong> {{ arg[1].abstract }}
+        </div>
+        <div class="form-group argument-box clearfix">
+          <strong>Argument:</strong> {{ arg[1].argument }}
+        </div>
+        <div class="form-group argument-box clearfix">
+          <ul>
+              <li>Total votes: {{ arg[2] }} </li>
+              <li>Average score (out of 10): {{ arg[3] }} </li>
+          </ul>
+        </div>
+        {% endfor %}
+        <div class="form-group argument-box clearfix">
+          <h3 class="argument-box-header">Top {{ ranking }} rated turing arguments <strong>against</strong> the motion:</h3>
+        </div>
+        {% for arg in pro_args %}
+        <h4><i># {{ arg[0] }}</i></h4>
+        <div class="form-group argument-box clearfix">
+          <strong>Abstract:</strong> {{ arg[1].abstract }}
+        </div>
+        <div class="form-group argument-box clearfix">
+          <strong>Argument:</strong> {{ arg[1].argument  }}
+        </div>
+        <div class="form-group argument-box clearfix">
+          <ul>
+              <li>Total votes: {{ arg[2]  }} </li>
+              <li>Average score (out of 10): {{ arg[3] }} </li>
+          </ul>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="container">
+      <h3><strong>See the top scoring turing arguments for these other motions:</strong></h3>
+    </div>
+    {% for motions in other_user_motions %}
+    <div class="container">
+      <h4>{{ motions.keys()[0] }}</h4>
+      <ul>
+        {% for motions in motions.values()[0] %}
+        <li><a href="/turingarguments/topic/{{ motions.id }}/topscoring?ranking=1">{{ motions.topic }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+      {% endfor %}
+  </body>
+</html>

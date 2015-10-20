@@ -27,8 +27,11 @@
     <div class="container">
     {% if user_status %}
     <p>Click <a href="/logout">here</a> to logout.</p>
-    <p>Click <a href="/voting">here</a> to vote on arguments.</p>
-    <p>Click <a href="/arguments">here</a> to add arguments or view how your arguments are scoring.</p>
+    <p>Click <a href="/arguments">here</a> to enter into an active debate and add your arguments.</p>
+    <p>Click <a href="/proposetopic">here</a> to start a new debate and propose your own motion.</p>
+    <p>Click <a href="/voting/{{ randnum }}">here</a> to vote on arguments.</p>
+    <p>Click <a href="/scoring/{{ randnum }}">here</a> to view how your arguments are scoring.</p>
+    <p>Click <a href="/turingarguments/topic/{{ randnum }}/topscoring">here</a> to view the highest rated turing arguments.</p>
     {% else %}
     <p>Click <a href="/login">here</a> to login or click <a href="/register">here</a> to register.</p>
     {% endif %}
@@ -40,7 +43,7 @@
       <h4>{{ motions.keys()[0] }}</h4>
       <ul>
         {% for motions in motions.values()[0] %}
-        <li><a href="/voting/{{ motions.id }}">{{ motions.topic }}</a></li>
+        <li><a href="/voting/{{ motions.id }}">{{ motions.topic }}</a> ({{ motions.days_left() }})</li> 
         {% endfor %}
       </ul>
     </div>

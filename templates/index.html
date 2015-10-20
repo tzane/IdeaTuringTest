@@ -15,9 +15,11 @@
       <p>Click <a href="/logout">here</a> to logout.</p>
       <p>Click <a href="/">here</a> to go to the home page.</p>
       <p>Click <a href="/arguments">here</a> to add arguments or view how your arguments are scoring.</p>
+      <p>Click <a href="/turingarguments/topic/{{ randnum }}/topscoring">here</a> to view the highest rated turing arguments.</p>
       <br><br>
       {% if user_status %}
       <h2>Vote on the best arguments <strong><u>for</u></strong> the motion "{{ topic.topic }}"</h3>
+      <li>There are {{ topic.days_left() }} days remaining until this motion becomes inactive and closed.</li>
       {% else %}
       <h2>Vote on the best arguments <strong><u>against</u></strong> the motion "{{ topic.topic }}"</h3>
       {% endif %}
@@ -56,7 +58,7 @@
       <h4>{{ motions.keys()[0] }}</h4>
       <ul>
         {% for motions in motions.values()[0] %}
-        <li><a href="/voting/{{ motions.id }}">{{ motions.topic }}</a></li>
+        <li><a href="/voting/{{ motions.id }}">{{ motions.topic }}</a> ({{ motions.days_left() }})</li>
         {% endfor %}
       </ul>
     </div>
