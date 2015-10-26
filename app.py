@@ -143,10 +143,12 @@ def voting(topic_number):
     other_motion_ids = tuple(motion[0] for motion in other_users)
     if user_motion[0].user_procon == True:
         session['user_status'] = True
-        displayable_arguments = Argument.query.join(Motion, User).filter(Motion.user_procon == True, User.id != session['user_id']).all()
+        print "Current user: ", session['user_id']
+        displayable_arguments = Argument.query.join(Motion, Topic).filter(Argument.procon == True, Topic.id == topic_number).all()
     else:
         session['user_status'] = False
-        displayable_arguments = Argument.query.join(Motion, User).filter(Motion.user_procon == False, User.id != session['user_id']).all() 
+        displayable_arguments = Argument.query.join(Motion, Topic).filter(Argument.procon == False, Topic.id == topic_number).all() 
+    displayable_arguments = [arg for arg in displayable_arguments if arg.author_id != session['user_id']]
     arguments = random.sample(displayable_arguments, 4)
     topic = db.session.query(Topic).filter_by(id = topic_number)[0]
     session['argument_ids'] = [argument.id for argument in arguments]
