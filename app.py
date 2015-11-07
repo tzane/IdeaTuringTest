@@ -5,6 +5,7 @@ from flask.ext.bcrypt import Bcrypt
 from functools import wraps
 from forms import LoginForm, RegisterForm
 from sqlalchemy.sql import func
+from sqlalchemy.orm import aliased
 from numpy import average, std
 import random
 from operator import itemgetter
@@ -26,7 +27,8 @@ from models import *
 
 @app.route('/')
 def home():
-    all_topics = db.session.query(Topic).all()
+    update_topic_status()
+    all_topics = db.session.query(Topic).filter_by(status = True).all()
     other_categories = db.session.query(Topic.category).distinct()
     user_available_motions = [{} for x in xrange(len(list(other_categories)))]
     for index, cat in enumerate(other_categories):
@@ -40,7 +42,7 @@ def home():
     all_motions = [i for i in user_available_motions if i.values()[0] != []]
     user_status = None
     
-    user_topics = db.session.query(Topic.id).join(Motion).filter(Motion.user_id == session['user_id'])
+    user_topics = db.session.query(Topic.id).distinct().join(Motion).filter(Motion.user_id == session['user_id'])
     user_topics = [top[0] for top in user_topics]
     randnum = random.sample(user_topics, 1)[0]
     try:
@@ -50,16 +52,54 @@ def home():
         return render_template('about.html', user_status = user_status, all_motions = all_motions, randnum = randnum)
     return render_template('about.html', user_status = user_status, all_motions = all_motions, randnum = randnum)
     
+def login_required(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        if 'logged_in' in session:
+            return f(*args, **kwargs)
+        else:
+            flash('You need to login first.')
+            return redirect(url_for('login'))
+    return wrap
+    
 @app.route('/proposetopic', methods=['GET'])
-def get_topic():
+@login_required
+def get_proposed_topic():
     categories = db.session.query(Topic.category).distinct()  
     return render_template('add_topic.html', categories=categories)
     
 @app.route('/proposetopic', methods=['POST'])
-def add_topic():
-    print "ADD RECORD TO PROPOSED TOPICS"
-    return redirect(url_for('home'))    
+@login_required
+def add_proposed_topic():
+    proposed_topic = ProposedTopic(request.form['category_value'], request.form['topic'], session['user_id'])
+    db.session.add(proposed_topic)
+    db.session.commit()
+    return redirect(url_for('home'))
 
+@app.route('/votetopic/<int:topic_number>', methods=['GET'])
+@login_required
+def show_proposed_topic(topic_number):
+    proposed_topic = ProposedTopic.query.get(topic_number)
+    if proposed_topic == None:
+        flash('This proposed motion doesn\'t exist.')
+        return redirect(url_for('home'))
+    comments_query = db.session.query(ProposedTopicComment).filter_by(proposedtopic_id = topic_number).order_by(ProposedTopicComment.created_datetime.desc()).all()
+    for i in comments_query:
+        print i
+    return render_template('vote_topic.html', proposed_topic=proposed_topic)
+
+@app.route('/votetopic/<int:topic_number>', methods=['POST'])
+@login_required
+def vote_proposed_topic(topic_number):
+    proposed_topic = ProposedTopic.query.get(topic_number)
+    print request.form['submit']
+    print request.form['comment']
+    if request.form['comment'] == "":
+        print True
+    else:
+        print False    
+    
+    return render_template('vote_topic.html', proposed_topic=proposed_topic)      
     
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -72,45 +112,42 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html')    
 
-def login_required(f):
-    @wraps(f)
-    def wrap(*args, **kwargs):
-        if 'logged_in' in session:
-            return f(*args, **kwargs)
-        else:
-            flash('You need to login first.')
-            return redirect(url_for('login'))
-    return wrap
-
 @app.route('/arguments', methods=['POST'])
 @login_required
 def add_arguments():
-    topic_id = db.session.query(Topic).filter_by(topic = request.form['motion_value']).all()[0]
+    topic_id = db.session.query(Topic).filter_by(topic = request.form['motion_value'], status = True).all()[0]
     if request.form['user_stance'] == "pro":
         added_motion = Motion(topic_id.id, session['user_id'], True)
         db.session.add(added_motion)
     else:
         added_motion = Motion(topic_id.id, session['user_id'], False)
-        db.session.add(added_motion)
-    argument = Argument(request.form['abstract'], request.form['argument'], session['user_id'], added_motion.id)
-    db.session.add(argument)
+        db.session.add(added_motion)   
+    motion_id = db.session.query(Motion.id).order_by(Motion.id.desc()).first()[0]
+    pro_argument = Argument(True, request.form['abstract'], request.form['argument'], session['user_id'], motion_id)
+    con_argument = Argument(False, request.form['abstract1'], request.form['argument1'], session['user_id'], motion_id)
+    db.session.add(pro_argument)
+    db.session.add(con_argument)
     db.session.commit()
-    return redirect(url_for('voting'))
+    
+    flash("You just submitted your arguments which other users will vote on. Now go vote on theirs and earn some credits back!")
+    url = "/voting/{interger}".format(interger = topic_id.id)
+    return redirect(url)
  
 @app.route('/arguments', methods=['GET'])
 @login_required
 def get_arguments():
-  category_filter = request.args.get('category_value', 'all')
-  categories = db.session.query(Topic.category).distinct()
-  if category_filter == 'all':
-    motions = Topic.query.distinct(Topic.category).all()
-    category_header = "All"
-  else:
-    motions = Topic.query.filter_by(category = category_filter)
-    category_header = category_filter
-  topics = db.session.query(func.count(Topic.id))[0][0]
-  randnum = random.choice(range(1, topics + 1))
-  return render_template('arguments.html', category_header = category_header, categories=categories, motions=motions, randnum=randnum)
+    update_topic_status()
+    category_filter = request.args.get('category_value', 'all')
+    categories = db.session.query(Topic.category).distinct()
+    if category_filter == 'all':
+        motions = Topic.query.distinct(Topic.category).filter_by(status = True).all()
+        category_header = "All"
+    else:
+        motions = Topic.query.filter_by(category = category_filter, status = True)
+        category_header = category_filter
+    topics = db.session.query(func.count(Topic.id)).filter_by(status = True).all()[0][0]
+    randnum = random.choice(range(1, topics + 1))
+    return render_template('arguments.html', category_header = category_header, categories=categories, motions=motions, randnum=randnum)
     
 @app.route('/voting/<int:topic_number>', methods=['GET','POST'])
 @login_required    
@@ -119,6 +156,7 @@ def voting(topic_number):
     if user_motion == []:
         flash('You need to submit arguments before you can vote!')
         return redirect(url_for('add_arguments'))
+    update_topic_status()
     other_topics = Topic.query.join(Motion, User).filter(Motion.topic_id != topic_number, User.id == session['user_id']).all()
     other_categories = db.session.query(Topic.category).distinct()
     user_available_motions = [{} for x in xrange(len(list(other_categories)))]
@@ -143,18 +181,21 @@ def voting(topic_number):
     other_motion_ids = tuple(motion[0] for motion in other_users)
     if user_motion[0].user_procon == True:
         session['user_status'] = True
-        print "Current user: ", session['user_id']
-        displayable_arguments = Argument.query.join(Motion, Topic).filter(Argument.procon == True, Topic.id == topic_number).all()
+        displayable_arguments = Argument.query.join(Motion, Topic).filter(Argument.procon == True, Topic.id == topic_number, Topic.status == True).all()
     else:
         session['user_status'] = False
-        displayable_arguments = Argument.query.join(Motion, Topic).filter(Argument.procon == False, Topic.id == topic_number).all() 
+        displayable_arguments = Argument.query.join(Motion, Topic).filter(Argument.procon == False, Topic.id == topic_number, Topic.status == True).all() 
     displayable_arguments = [arg for arg in displayable_arguments if arg.author_id != session['user_id']]
-    arguments = random.sample(displayable_arguments, 4)
+    try:
+        arguments = random.sample(displayable_arguments, 4)
+    except ValueError:
+        # flash messages
+        return "new url for topic with enough args to vote on"    
     topic = db.session.query(Topic).filter_by(id = topic_number)[0]
     session['argument_ids'] = [argument.id for argument in arguments]
     session['motion_ids'] = [argument.motion_id for argument in arguments]
     user_status = session['user_status']
-    topics = db.session.query(func.count(Topic.id))[0][0]
+    topics = db.session.query(func.count(Topic.id)).filter_by(status = True).all()[0][0]
     randnum = random.choice(range(1, topics + 1))
     return render_template("index.html", user_status=user_status, arguments=arguments, topic=topic, other_user_motions=other_user_motions, randnum=randnum)
 
@@ -197,6 +238,7 @@ def scoring(topic_id):
   
     current_topic = Topic.query.get(topic_id)
     
+    update_topic_status()
     other_topics = Topic.query.join(Motion, User).filter(Motion.topic_id != topic_id, User.id == session['user_id']).all()
     other_categories = db.session.query(Topic.category).distinct()
     user_available_motions = [{} for x in xrange(len(list(other_categories)))]
@@ -210,7 +252,7 @@ def scoring(topic_id):
         user_available_motions[index][str(cat[0])] = temp_list   
     other_user_motions = [i for i in user_available_motions if i.values()[0] != []]
     
-    user_topics = db.session.query(Topic.id).join(Motion).filter(Motion.user_id == session['user_id'])
+    user_topics = db.session.query(Topic.id).join(Motion).filter(Motion.user_id == session['user_id'], Topic.status == True)
     user_topics = [top[0] for top in user_topics]
     randnum = random.sample(user_topics, 1)[0]
     
@@ -234,9 +276,18 @@ def scoring(topic_id):
        
 @app.route('/turingarguments/topic/<int:topic_id>/topscoring', methods=['GET'])
 def top_turing_args(topic_id):
-    current_topic = Topic.query.get(topic_id)            
-    pro_arguments = db.session.query(func.avg(Vote.value), Argument.id).join(Motion, Argument).filter(Motion.topic_id == topic_id, Motion.user_procon == True, Argument.procon == False).group_by(Argument.id)
-    con_arguments = db.session.query(func.avg(Vote.value), Argument.id).join(Motion, Argument).filter(Motion.topic_id == topic_id, Motion.user_procon == False, Argument.procon == True).group_by(Argument.id)
+    current_topic = Topic.query.get(topic_id)    
+
+    con_mots = db.session.query(Motion.id).filter(Motion.topic_id == topic_id, Motion.user_procon == False).all()
+    pro_mots = db.session.query(Motion.id).filter(Motion.topic_id == topic_id, Motion.user_procon == True).all()
+    con_motion_ids = [mot[0] for mot in con_mots]
+    pro_motion_ids = [mot[0] for mot in pro_mots]
+    con_args = db.session.query(Argument.id).join(Motion).filter(Motion.id.in_(con_motion_ids), Argument.procon == True).all()
+    pro_args = db.session.query(Argument.id).join(Motion).filter(Motion.id.in_(pro_motion_ids), Argument.procon == False).all()
+    con_arg_ids = [arg[0] for arg in con_args]
+    pro_arg_ids = [arg[0] for arg in pro_args]
+    con_arguments = db.session.query(func.avg(Vote.value), Argument.id).join(Argument).filter(Argument.id.in_(con_arg_ids)).group_by(Argument.id)
+    pro_arguments = db.session.query(func.avg(Vote.value), Argument.id).join(Argument).filter(Argument.id.in_(pro_arg_ids)).group_by(Argument.id)
     
     rank = request.args.get('ranking')
     if rank is None:
@@ -268,6 +319,7 @@ def top_turing_args(topic_id):
         con_avg_votes = round(max_con_args[index][0], 1)
         con_args.append((con_ranking, Argument.query.get(max_con_args[index][1]), con_votes, con_avg_votes))
         
+    update_topic_status()
     other_topics = Topic.query.join(Motion, User).filter(Motion.topic_id != topic_id, User.id == session['user_id']).all()
     other_categories = db.session.query(Topic.category).distinct()
     user_available_motions = [{} for x in xrange(len(list(other_categories)))]
@@ -281,7 +333,7 @@ def top_turing_args(topic_id):
         user_available_motions[index][str(cat[0])] = temp_list   
     other_user_motions = [i for i in user_available_motions if i.values()[0] != []]
     
-    topics = db.session.query(func.count(Topic.id))[0][0]
+    topics = db.session.query(func.count(Topic.id)).filter_by(status = True)[0][0]
     randnum = random.choice(range(1, topics + 1))
     
     user_topics = db.session.query(Topic.id).join(Motion).filter(Motion.user_id == session['user_id'])
@@ -319,7 +371,15 @@ def login():
 @login_required
 def logout():
     session.pop('logged_in', None)
-    return redirect(url_for('home'))    
+    return redirect(url_for('home'))
+
+def update_topic_status():
+    active_topics = db.session.query(Topic).filter_by(status = True).all()
+    for topic in active_topics:
+        if "Closed" in topic.days_left():
+            updated_topic = Topic.query.get(topic.id)
+            updated_topic.status = False
+            db.session.commit()
  
 if __name__ == '__main__':
     app.run(debug=True)

@@ -85,7 +85,7 @@
       <h4>{{ motions.keys()[0] }}</h4>
       <ul>
         {% for motions in motions.values()[0] %}
-        <li><a href="/turingarguments/topic/{{ motions.id }}/topscoring?ranking=1">{{ motions.topic }}</a></li>
+        <li><a href="/turingarguments/topic/{{ motions.id }}/topscoring?ranking=1">{{ motions.topic }}</a> ({{ motions.days_left() }})</li>
         {% endfor %}
       </ul>
     </div>

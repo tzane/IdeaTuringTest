@@ -70,7 +70,7 @@
       <h4>{{ motions.keys()[0] }}</h4>
       <ul>
         {% for motions in motions.values()[0] %}
-        <li><a href="/scoring/{{ motions.id }}">{{ motions.topic }}</a></li>
+        <li><a href="/scoring/{{ motions.id }}">{{ motions.topic }}</a> ({{ motions.days_left() }})</li>
         {% endfor %}
       </ul>
     </div>

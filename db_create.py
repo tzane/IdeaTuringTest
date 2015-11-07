@@ -1,21 +1,46 @@
 from app import db, bcrypt
-from models import User, Topic, Motion, Argument, Vote
+from models import User, Topic, Motion, Argument, Vote, ProposedTopic, ProposedTopicVote, ProposedTopicComment
 import datetime
+from random import randint
 
 db.create_all()
 
 # insert
-db.session.add(User("Natalie", "nat@natalie.com", "password"))
+db.session.add(User("Emily", "em@emily.com", "password"))
 db.session.add(User("Tyler", "ty@tyler.com", "password"))
 db.session.add(User("Kevin", "kev@kevin.com", "password"))
 db.session.add(User("David","dav@david.com", "password"))
 db.session.add(User("Nick","nic@nick.com", "password"))
 
-db.session.add(Topic("Economy", "The federal government should impose a national $15/hr minimum wage.", 2)) 
-db.session.add(Topic("International Relations", "The immediate re-militarization of NATO should be a top priority in advancing U.S. national security interests.", 5)) 
-db.session.add(Topic("Economy", "Something something about the economy.", 2)) 
-db.session.add(Topic("Environment", "Something something about the environment.", 5))
-db.session.add(Topic("International Relations", "Something something about international relations.", 3)) 
+db.session.add(Topic("Economy", "The federal government should impose a national $15/hr minimum wage.", 2, True)) 
+db.session.add(Topic("International Relations", "The immediate re-militarization of NATO should be a top priority in advancing U.S. national security interests.", 5, True)) 
+db.session.add(Topic("Economy", "Something something about the economy.", 2, True)) 
+db.session.add(Topic("Environment", "Something something about the environment.", 5, True))
+db.session.add(Topic("International Relations", "Something something about international relations.", 3, True))
+db.session.add(Topic("Environment", "Something about the Kyoto Protocol.", 1, False))
+
+db.session.add(ProposedTopic("Environment", "Something about the environment at the G8 summit.", 1))
+db.session.add(ProposedTopic("International Relations", "The TPP deal will ultimately benefit everyone and should be ratified immediately.", 2))
+db.session.add(ProposedTopic("Constitutional Law", "Roe vs. Wade (1973) should be overturned.", 3))
+
+# boolean vote_value, proposed_topic.id, author_id
+
+db.session.add(ProposedTopicVote(True, 1, 2))
+db.session.add(ProposedTopicVote(True, 1, 3))
+db.session.add(ProposedTopicVote(False, 1, 2))
+db.session.add(ProposedTopicVote(True, 1, 4)) 
+db.session.add(ProposedTopicVote(False, 2, 1))
+db.session.add(ProposedTopicVote(False, 2, 3))
+db.session.add(ProposedTopicVote(True, 2, 4))
+db.session.add(ProposedTopicVote(True, 2, 5))
+db.session.add(ProposedTopicVote(True, 3, 1))
+db.session.add(ProposedTopicVote(False, 3, 4))
+
+# comment, proposed_topic.id, author_id
+db.session.add(ProposedTopicComment("Great idea! This seems pretty clear and reasonable. Let's up-vote this people!", 1, 2))
+db.session.add(ProposedTopicComment("This shouldn't even be debated. Stop giving the evil 1% a platform. Hurr durr!", 2, 3))
+db.session.add(ProposedTopicComment("What do you mean by everyone? That's pretty important to make clear.", 2, 5))
+db.session.add(ProposedTopicComment("What about Roe vs. Wade. Can you be more specific? I'm down-voting this is clarified.", 3, 1))
 
 # topic_id, user_id, user_procon
 db.session.add(Motion(1, 1, False))
@@ -38,6 +63,11 @@ db.session.add(Motion(4, 2, True))
 db.session.add(Motion(4, 3, True))
 db.session.add(Motion(4, 4, False))
 db.session.add(Motion(4, 5, True))
+db.session.add(Motion(6, 1, True))
+db.session.add(Motion(6, 2, True)) 
+db.session.add(Motion(6, 3, True))
+db.session.add(Motion(6, 4, False))
+db.session.add(Motion(6, 5, False))
 
 # abstract, argument, author_id, motion_id
 db.session.add(Argument(False, "DON\'T TREAD ON ME!", "OBAMA\'S NEW SOCIALISM IS ALL ABOUT GOVERNMENT HANDOUTS TO THE POOR AND LAZY", 1, 1))
@@ -52,17 +82,23 @@ db.session.add(Argument(False, "Kevin\'s con abstract.", "Kevin\'s con argument.
 db.session.add(Argument(False, "David\'s con abstract.", "David\'s con argument.", 4, 9))
 db.session.add(Argument(False, "Nick\'s con abstract.", "Nick\'s con argument.", 5, 10))
 
-db.session.add(Argument(False, "Natalie\'s con abstract.", "Natalie\'s con abstract.", 1, 11))
+db.session.add(Argument(False, "Emily\'s con abstract.", "Emily\'s con abstract.", 1, 11))
 db.session.add(Argument(False, "Tyler\'s con abstract", "Tyler\'s con argument.", 2, 12))
 db.session.add(Argument(False, "Kevin\'s con abstract.", "Kevin\'s con argument.", 3, 13))
 db.session.add(Argument(False, "David\'s con abstract.", "David\'s con argument.", 4, 14))
 db.session.add(Argument(False, "Nick\'s con abstract.", "Nick\'s con argument.", 5, 15))
 
-db.session.add(Argument(False, "Natalie\'s con abstract.", "Natalie\'s con abstract.", 1, 16))
+db.session.add(Argument(False, "Emily\'s con abstract.", "Emily\'s con abstract.", 1, 16))
 db.session.add(Argument(False, "Tyler\'s con abstract", "Tyler\'s con argument.", 2, 17))
 db.session.add(Argument(False, "Kevin\'s con abstract.", "Kevin\'s con argument.", 3, 18))
 db.session.add(Argument(False, "David\'s con abstract.", "David\'s con argument.", 4, 19))
 db.session.add(Argument(False, "Nick\'s con abstract.", "Nick\'s con argument.", 5, 20))
+
+db.session.add(Argument(False, "Emily\'s con abstract.", "Emily\'s con abstract.", 1, 21))
+db.session.add(Argument(False, "Tyler\'s con abstract", "Tyler\'s con argument.", 2, 22))
+db.session.add(Argument(False, "Kevin\'s con abstract.", "Kevin\'s con argument.", 3, 23))
+db.session.add(Argument(False, "David\'s con abstract.", "David\'s con argument.", 4, 24))
+db.session.add(Argument(False, "Nick\'s con abstract.", "Nick\'s con argument.", 5, 25))
 
 db.session.add(Argument(True, "WE ARE THE 1%!", "AND WE WILL NOT TOLERATE THE SYSTEMATIC OPPRESSION AND EXTORTION OF WORKERS BY GREEDY CORPORATIONS.", 1, 1))
 db.session.add(Argument(True, "The minimum wage ensures that employers invest in their employees and is overall good for the economy.", "The industry demand for labor is much more inelastic than most economists think. A $15/hr minimum wage will not cause significant levels unemployment and, therefore, helps redistribute profits from investors and corporate executives to the workers without significant unemployment risks. What's more, labor has a greater propensity to consume with their income which further stimulates overall aggregate demand.", 2, 2))
@@ -76,17 +112,23 @@ db.session.add(Argument(True, "Kevin\'s pro abstract.", "Kevin\'s pro argument."
 db.session.add(Argument(True, "David\'s pro abstract.", "David\'s pro argument.", 4, 9))
 db.session.add(Argument(True, "Nick\'s pro abstract.", "Nick\'s pro argument.", 5, 10))
 
-db.session.add(Argument(True, "Natalie\'s pro abstract.", "Natalie\'s pro abstract.", 1, 11))
+db.session.add(Argument(True, "Emily\'s pro abstract.", "Emily\'s pro abstract.", 1, 11))
 db.session.add(Argument(True, "Tyler\'s pro abstract", "Tyler\'s pro argument.", 2, 12))
 db.session.add(Argument(True, "Kevin\'s pro abstract.", "Kevin\'s pro argument.", 3, 13))
 db.session.add(Argument(True, "David\'s pro abstract.", "David\'s pro argument.", 4, 14))
 db.session.add(Argument(True, "Nick\'s pro abstract.", "Nick\'s pro argument.", 5, 15))
 
-db.session.add(Argument(True, "Natalie\'s pro abstract.", "Natalie\'s pro abstract.", 1, 16))
+db.session.add(Argument(True, "Emily\'s pro abstract.", "Emily\'s pro abstract.", 1, 16))
 db.session.add(Argument(True, "Tyler\'s pro abstract", "Tyler\'s pro argument.", 2, 17))
 db.session.add(Argument(True, "Kevin\'s pro abstract.", "Kevin\'s pro argument.", 3, 18))
 db.session.add(Argument(True, "David\'s pro abstract.", "David\'s pro argument.", 4, 19))
 db.session.add(Argument(True, "Nick\'s pro abstract.", "Nick\'s pro argument.", 5, 20))
+
+db.session.add(Argument(True, "Emily\'s pro abstract.", "Emily\'s pro abstract.", 1, 21))
+db.session.add(Argument(True, "Tyler\'s pro abstract", "Tyler\'s pro argument.", 2, 22))
+db.session.add(Argument(True, "Kevin\'s pro abstract.", "Kevin\'s pro argument.", 3, 23))
+db.session.add(Argument(True, "David\'s pro abstract.", "David\'s pro argument.", 4, 24))
+db.session.add(Argument(True, "Nick\'s pro abstract.", "Nick\'s pro argument.", 5, 25))
 
 # arg_id, motion_id, value, user_id
 db.session.add(Vote(2, 2, 9, 1)) 
@@ -117,19 +159,39 @@ db.session.add(Vote(6, 6, 2, 5))
 db.session.add(Vote(7, 7, 9, 5))
 db.session.add(Vote(8, 8, 4, 5))
 db.session.add(Vote(9, 9, 3, 5))
-db.session.add(Vote(27, 7, 9, 1)) 
+db.session.add(Vote(27, 7, 9, 1))  
 db.session.add(Vote(28, 8, 8, 1))
 db.session.add(Vote(29, 9, 7, 1))
-db.session.add(Vote(30, 10, 7, 1))
+db.session.add(Vote(30, 10, 7, 1)) 
 db.session.add(Vote(26, 6, 3, 3))
-db.session.add(Vote(27, 7, 9, 3))
+db.session.add(Vote(27, 7, 9, 3)) 
 db.session.add(Vote(29, 9, 7, 3))
-db.session.add(Vote(30, 10, 8, 3))
+db.session.add(Vote(30, 10, 8, 3)) 
 db.session.add(Vote(26, 6, 6, 4))
-db.session.add(Vote(27, 7, 8, 4))
+db.session.add(Vote(27, 7, 8, 4)) 
 db.session.add(Vote(28, 8, 7, 4))
-db.session.add(Vote(30, 10, 7, 4))
+db.session.add(Vote(30, 10, 7, 4)) 
 
+db.session.add(Vote(47, 22, randint(1,10), 1))
+db.session.add(Vote(48, 23, randint(1,10), 1))
+db.session.add(Vote(49, 24, randint(1,10), 1))
+db.session.add(Vote(50, 25, randint(1,10), 1))
+db.session.add(Vote(46, 21, randint(1,10), 2))
+db.session.add(Vote(48, 23, randint(1,10), 2))
+db.session.add(Vote(49, 24, randint(1,10), 2))
+db.session.add(Vote(50, 25, randint(1,10), 2))
+db.session.add(Vote(46, 21, randint(1,10), 3))
+db.session.add(Vote(47, 22, randint(1,10), 3))
+db.session.add(Vote(49, 24, randint(1,10), 3))
+db.session.add(Vote(50, 25, randint(1,10), 3))
+db.session.add(Vote(21, 21, randint(1,10), 4))
+db.session.add(Vote(22, 22, randint(1,10), 4))
+db.session.add(Vote(23, 23, randint(1,10), 4))
+db.session.add(Vote(25, 25, randint(1,10), 4))
+db.session.add(Vote(21, 21, randint(1,10), 5))
+db.session.add(Vote(22, 22, randint(1,10), 5))
+db.session.add(Vote(23, 23, randint(1,10), 5))
+db.session.add(Vote(24, 24, randint(1,10), 5))
 
 #commit
 db.session.commit()
