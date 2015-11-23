@@ -47,8 +47,8 @@ class ProposedTopicVote(db.Model):
         self.proposedtopic_id = proposedtopic_id
         self.author_id = author_id
         
-    def __repr__(self):
-        return self.vote_value
+    # def __repr__(self):
+        # return self.author_id
         
 class ProposedTopicComment(db.Model):
 
@@ -67,8 +67,8 @@ class ProposedTopicComment(db.Model):
         
     def time_since(self):
         time_since = datetime.datetime.now() - self.created_datetime
-        seconds_since = int(timesince.total_seconds())
-        minutes_since = int(timesince.total_seconds() / 60)
+        seconds_since = int(time_since.total_seconds())
+        minutes_since = int(time_since.total_seconds() / 60)
         hours_since = int(minutes_since / 60)
         days_since = time_since.days
         weeks_since = int(days_since / 7)

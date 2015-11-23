@@ -1,7 +1,11 @@
+<!DOCTYPE html>
 <html>
   <head>
     <title>Idea Turing Test - add arguments</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script> -->
+    <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
     <link href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet" media="screen">
     <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
     <style type="text/css">
@@ -26,18 +30,51 @@
           <p>Click <a href="/voting/{{ randnum }}">here</a> vote on arguments.</p>
           <p>Click <a href="/scoring/{{ user_randtop }}">here</a> to view how your arguments are scoring.</p>
       </div>
-      <h3>The motion: <i>"{{ proposed_topic.topic }}"</i></h3>
+      <div class="container">
+        <h3>The motion: <i>"{{ proposed_topic.topic }}"</i></h3>
+        <h4>Category: <strong>{{ proposed_topic.category }}</strong></hr>
+        <h4>Votes: {{ up_votes }} up - {{ down_votes }} down</h4>
+      </div>
       <form action="" method="post">
-        <button class="btn btn-default active" type="submit" name="submit" value="1">Vote ↑</button>
-        <button class="btn btn-default" type="submit" name="submit" value="2">Vote ↓</button>
+        {% if current_user[0] == True %}
+        <label class="radio-inline"><input type="radio" name="user_vote" id="optionsRadios1" value="true" checked>Vote Up↑</label>
+        <label class="radio-inline"><input type="radio" name="user_vote" id="optionsRadios2" value="false">Vote Down↓</label>
+        {% elif current_user[0] == False %}
+        <label class="radio-inline"><input type="radio" name="user_vote" id="optionsRadios1" value="true">Vote Up↑</label>
+        <label class="radio-inline"><input type="radio" name="user_vote" id="optionsRadios2" value="false" checked>Vote Down↓</label>
+        {% else %}
+        <label class="radio-inline"><input type="radio" name="user_vote" id="optionsRadios1" value="true">Vote Up↑</label>
+        <label class="radio-inline"><input type="radio" name="user_vote" id="optionsRadios2" value="false">Vote Down↓</label>
+        {% endif %}
         <br><br>
         <div class="form-group argument-box clearfix">
           <div class="col-sm-10">
+            {% if user_comment == [] %}
             <textarea class="form-control" id="argument" name="comment" style="height: 75px;" placeholder="Comment here (optional).">{{ request.form.topic }}</textarea>
+            {% else %}
+            <textarea class="form-control" id="argument" name="comment" style="height: 75px;" placeholder="{{ user_comment[0] }}">{{ request.form.topic }}</textarea>
+            {% endif %}
           </div>
-        </div>         
+        </div>
+        <button class="btn btn-primary" type="submit">Submit</button>        
       </form>
     </div>
-  </body>
- </html>
+    <div id="parent" class="container">
+      <div class="accordion-group">
+        <div id="div1" class="collapse">
+            <!-- <button type="button" class="btn btn-danger" data-toggle="collapse" data-target="#comments" data-parent="#parent">Hide</button> -->
+            <div id = "comments" class="well">
+              {% for com in comments_query %}
+              <li><i><strong>{{ com[0].name }}</strong> says</i>: {{ com[1].comment }} <strong>({{ com[1].time_since() }})</strong>.
+              <br><br>      
+              {% endfor %}
+            </div>
+        </div>
+        <div id="div2" class="collapse in">
+            <button type="button" class="btn btn-success" data-toggle="collapse" data-target="#div1" data-parent="#parent">Show Comments ({{ number_comments }})</button>
+        </div>
+      </div>
+    </div>
+  </body>  
+</html>
  

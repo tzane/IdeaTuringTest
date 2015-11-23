@@ -4,7 +4,7 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.bcrypt import Bcrypt
 from functools import wraps
 from forms import LoginForm, RegisterForm
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func, expression
 from sqlalchemy.orm import aliased
 from numpy import average, std
 import random
@@ -41,15 +41,16 @@ def home():
         user_available_motions[index][cat[0]] = temp_list    
     all_motions = [i for i in user_available_motions if i.values()[0] != []]
     user_status = None
-    
-    user_topics = db.session.query(Topic.id).distinct().join(Motion).filter(Motion.user_id == session['user_id'])
-    user_topics = [top[0] for top in user_topics]
-    randnum = random.sample(user_topics, 1)[0]
+
     try:
         if session['logged_in'] == True:
             user_status = True
     except KeyError:
-        return render_template('about.html', user_status = user_status, all_motions = all_motions, randnum = randnum)
+        return render_template('about.html', user_status = user_status, all_motions = all_motions)
+    
+    user_topics = db.session.query(Topic.id).distinct().join(Motion).filter(Motion.user_id == session['user_id'])
+    user_topics = [top[0] for top in user_topics]
+    randnum = random.sample(user_topics, 1)[0]
     return render_template('about.html', user_status = user_status, all_motions = all_motions, randnum = randnum)
     
 def login_required(f):
@@ -76,30 +77,68 @@ def add_proposed_topic():
     db.session.commit()
     return redirect(url_for('home'))
 
-@app.route('/votetopic/<int:topic_number>', methods=['GET'])
+@app.route('/votemotion/<int:topic_number>', methods=['GET'])
 @login_required
 def show_proposed_topic(topic_number):
     proposed_topic = ProposedTopic.query.get(topic_number)
     if proposed_topic == None:
         flash('This proposed motion doesn\'t exist.')
         return redirect(url_for('home'))
-    comments_query = db.session.query(ProposedTopicComment).filter_by(proposedtopic_id = topic_number).order_by(ProposedTopicComment.created_datetime.desc()).all()
-    for i in comments_query:
-        print i
-    return render_template('vote_topic.html', proposed_topic=proposed_topic)
+    current_user_query = db.session.query(ProposedTopicVote).filter_by(proposedtopic_id = topic_number)
+    current_user = [vote.vote_value for vote in current_user_query if vote.author_id == session['user_id']]
+    user_comment = db.session.query(ProposedTopicComment).filter_by(proposedtopic_id = topic_number, author_id = session['user_id'])
+    user_comment = [com.comment for com in user_comment]
+    up_votes = db.session.query(func.count(ProposedTopicVote.id)).filter_by(vote_value = True, proposedtopic_id = topic_number)
+    up_votes = up_votes[0][0]
+    down_votes = db.session.query(func.count(ProposedTopicVote.id)).filter_by(vote_value = False, proposedtopic_id = topic_number)
+    down_votes = down_votes[0][0]
+    
+    comments_query = db.session.query(User, ProposedTopicComment).join(ProposedTopicComment).filter_by(proposedtopic_id = topic_number).order_by(ProposedTopicComment.created_datetime.desc()).all()
+    number_comments = db.session.query(func.count(ProposedTopicComment.id)).filter(ProposedTopicComment.proposedtopic_id == topic_number).all()[0][0]
+    
+    return render_template('vote_topic.html', 
+        proposed_topic=proposed_topic, 
+        current_user=current_user, 
+        user_comment=user_comment, 
+        up_votes=up_votes,
+        down_votes=down_votes,
+        number_comments=number_comments,
+        comments_query=comments_query)
 
-@app.route('/votetopic/<int:topic_number>', methods=['POST'])
+@app.route('/votemotion/<int:topic_number>', methods=['POST'])
 @login_required
 def vote_proposed_topic(topic_number):
-    proposed_topic = ProposedTopic.query.get(topic_number)
-    print request.form['submit']
-    print request.form['comment']
-    if request.form['comment'] == "":
-        print True
-    else:
-        print False    
+    url = "/votemotion/{interger}".format(interger = topic_number)
     
-    return render_template('vote_topic.html', proposed_topic=proposed_topic)      
+    vote_value = request.form.get('user_vote')
+    if vote_value == None:
+        # Didn't submit a vote
+        # Find a way to flash notification?
+        return redirect(url)
+    vote_update = db.session.query(ProposedTopicVote).filter_by(proposedtopic_id = topic_number, author_id=session['user_id']).all()
+    new_vote = True if vote_value == 'true' else False
+    if vote_update == []:
+        db.session.add(ProposedTopicVote(new_vote, topic_number, session['user_id']))
+        db.session.commit()
+    else:
+        vote_update[0].vote_value = new_vote
+        db.session.commit()
+    
+    comment = request.form['comment']
+    comment_update = db.session.query(ProposedTopicComment).filter_by(proposedtopic_id = topic_number, author_id = session['user_id']).all()
+    if comment == "":
+        pass
+    else:
+        if comment_update == []:
+            db.session.add(ProposedTopicComment(comment, topic_number, session['user_id']))
+            db.session.commit()
+        else:
+            comment_update[0].comment = comment
+            comment_update[0].created_datetime = datetime.datetime.now()
+            db.session.commit()
+    
+    db.session.commit()
+    return redirect(url)      
     
 @app.route('/register', methods=['GET', 'POST'])
 def register():

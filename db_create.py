@@ -24,11 +24,10 @@ db.session.add(ProposedTopic("International Relations", "The TPP deal will ultim
 db.session.add(ProposedTopic("Constitutional Law", "Roe vs. Wade (1973) should be overturned.", 3))
 
 # boolean vote_value, proposed_topic.id, author_id
-
 db.session.add(ProposedTopicVote(True, 1, 2))
 db.session.add(ProposedTopicVote(True, 1, 3))
-db.session.add(ProposedTopicVote(False, 1, 2))
-db.session.add(ProposedTopicVote(True, 1, 4)) 
+db.session.add(ProposedTopicVote(False, 1, 4))
+db.session.add(ProposedTopicVote(True, 1, 5)) 
 db.session.add(ProposedTopicVote(False, 2, 1))
 db.session.add(ProposedTopicVote(False, 2, 3))
 db.session.add(ProposedTopicVote(True, 2, 4))
