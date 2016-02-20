@@ -35,6 +35,7 @@
         <h4>Category: <strong>{{ proposed_topic.category }}</strong></hr>
         <h4>Votes: {{ up_votes }} up - {{ down_votes }} down</h4>
       </div>
+      {% if user_proposed == False %}
       <form action="" method="post">
         {% if current_user[0] == True %}
         <label class="radio-inline"><input type="radio" name="user_vote" id="optionsRadios1" value="true" checked>Vote Up↑</label>
@@ -58,6 +59,9 @@
         </div>
         <button class="btn btn-primary" type="submit">Submit</button>        
       </form>
+      {% else %}
+      <p>You proposed this motion. Click <a href="/edit-motion/{{ proposed_topic.id }}">here</a> to edit it.</p>
+      {% endif %}
     </div>
     <div id="parent" class="container">
       <div class="accordion-group">

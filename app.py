@@ -63,24 +63,47 @@ def login_required(f):
             return redirect(url_for('login'))
     return wrap
     
-@app.route('/proposetopic', methods=['GET'])
+@app.route('/propose-motion', methods=['GET'])
 @login_required
 def get_proposed_topic():
     categories = db.session.query(Topic.category).distinct()  
     return render_template('add_topic.html', categories=categories)
     
-@app.route('/proposetopic', methods=['POST'])
+@app.route('/propose-motion', methods=['POST'])
 @login_required
 def add_proposed_topic():
     proposed_topic = ProposedTopic(request.form['category_value'], request.form['topic'], session['user_id'])
     db.session.add(proposed_topic)
     db.session.commit()
     return redirect(url_for('home'))
+    
+@app.route('/edit-motion/<int:topic_number>', methods=['GET'])
+@login_required
+def get_edited_proposed_topic(topic_number):
+    categories = db.session.query(Topic.category).distinct()
+    motion_update = ProposedTopic.query.get(topic_number)    
+    return render_template('edit_topic.html', motion_update=motion_update, categories=categories)
+    
+@app.route('/edit-motion/<int:topic_number>', methods=['POST'])
+@login_required
+def add_edited_proposed_topic(topic_number):
+    motion_update = ProposedTopic.query.get(topic_number)
+    motion_update.category = request.form['category_value']
+    motion_update.topic = request.form['topic']
+    motion_update.created_date = datetime.date.today
+    db.session.commit()
+    url = "/vote-motion/{interger}".format(interger = topic_number)
+    return redirect(url)
 
-@app.route('/votemotion/<int:topic_number>', methods=['GET'])
+@app.route('/vote-motion/<int:topic_number>', methods=['GET'])
 @login_required
 def show_proposed_topic(topic_number):
     proposed_topic = ProposedTopic.query.get(topic_number)
+    if proposed_topic.author_id == session['user_id']:
+        user_proposed = True
+    else:
+        user_proposed = False
+    print user_proposed
     if proposed_topic == None:
         flash('This proposed motion doesn\'t exist.')
         return redirect(url_for('home'))
@@ -96,7 +119,8 @@ def show_proposed_topic(topic_number):
     comments_query = db.session.query(User, ProposedTopicComment).join(ProposedTopicComment).filter_by(proposedtopic_id = topic_number).order_by(ProposedTopicComment.created_datetime.desc()).all()
     number_comments = db.session.query(func.count(ProposedTopicComment.id)).filter(ProposedTopicComment.proposedtopic_id == topic_number).all()[0][0]
     
-    return render_template('vote_topic.html', 
+    return render_template('vote_topic.html',
+        user_proposed=user_proposed,    
         proposed_topic=proposed_topic, 
         current_user=current_user, 
         user_comment=user_comment, 
@@ -105,7 +129,7 @@ def show_proposed_topic(topic_number):
         number_comments=number_comments,
         comments_query=comments_query)
 
-@app.route('/votemotion/<int:topic_number>', methods=['POST'])
+@app.route('/vote-motion/<int:topic_number>', methods=['POST'])
 @login_required
 def vote_proposed_topic(topic_number):
     url = "/votemotion/{interger}".format(interger = topic_number)
