@@ -21,8 +21,8 @@
   <body>
     <div class="container">
       <h1>The Political Turing Test</h1>
-      <h2>Vote on Proposed Topics</h2>
-      <p>Vote on these topics something something SOMETHING</p>
+      <h2>Vote on Proposed Motions</h2>
+      <p>Vote on these motions something something SOMETHING</p>
       <div class="container">
           <p>Click <a href="/logout">here</a> to logout.</p>
           <p>Click <a href="/">here</a> to return home.</p>
@@ -33,7 +33,7 @@
       <div class="container">
         <h3>The motion: <i>"{{ proposed_topic.topic }}"</i></h3>
         <h4>Category: <strong>{{ proposed_topic.category }}</strong></hr>
-        <h4>Votes: {{ up_votes }} up - {{ down_votes }} down</h4>
+        <h4>Votes: <strong>{{ up_votes }}</strong> up - <strong>{{ down_votes }}</strong> down. Need {{ votes_needed }} more up votes to pass!</h4>
       </div>
       {% if user_proposed == False %}
       <form action="" method="post">
@@ -75,10 +75,23 @@
             </div>
         </div>
         <div id="div2" class="collapse in">
-            <button type="button" class="btn btn-success" data-toggle="collapse" data-target="#div1" data-parent="#parent">Show Comments ({{ number_comments }})</button>
+            <button type="button" class="btn btn-success" data-toggle="collapse" data-target="#div1" data-parent="#parent">Show Comments ({{ comments_query|length }})</button>
         </div>
       </div>
     </div>
+    <div class="container">
+      <h3><strong>Vote on these other proposed motions by category:</strong></h3>
+    </div>
+    {% for props in other_prop_topics %}
+    <div class="container">
+      <h4>{{ props.keys()[0] }}</h4>
+      <ul>
+        {% for props in props.values()[0] %}
+        <li><a href="/vote-motion/{{ props[0].id }}">{{ props[0] }}</a> {{ props[1] }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+      {% endfor %}
   </body>  
 </html>
  

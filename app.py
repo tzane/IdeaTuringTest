@@ -51,7 +51,11 @@ def home():
     user_topics = db.session.query(Topic.id).distinct().join(Motion).filter(Motion.user_id == session['user_id'])
     user_topics = [top[0] for top in user_topics]
     randnum = random.sample(user_topics, 1)[0]
-    return render_template('about.html', user_status = user_status, all_motions = all_motions, randnum = randnum)
+    
+    proposed_topics = db.session.query(ProposedTopic.id).distinct()
+    proposed_topics = [prop[0] for prop in proposed_topics]
+    randProposedTopic = random.sample(proposed_topics, 1)[0]
+    return render_template('about.html', user_status = user_status, all_motions = all_motions, randnum = randnum, randProposedTopic = randProposedTopic)
     
 def login_required(f):
     @wraps(f)
@@ -72,6 +76,9 @@ def get_proposed_topic():
 @app.route('/propose-motion', methods=['POST'])
 @login_required
 def add_proposed_topic():
+    if request.form['topic'] == '':
+        flash("You didn't submit anything!")
+        return redirect(url_for('add_proposed_topic'))
     proposed_topic = ProposedTopic(request.form['category_value'], request.form['topic'], session['user_id'])
     db.session.add(proposed_topic)
     db.session.commit()
@@ -81,8 +88,9 @@ def add_proposed_topic():
 @login_required
 def get_edited_proposed_topic(topic_number):
     categories = db.session.query(Topic.category).distinct()
-    motion_update = ProposedTopic.query.get(topic_number)    
+    motion_update = ProposedTopic.query.get(topic_number)  
     return render_template('edit_topic.html', motion_update=motion_update, categories=categories)
+    
     
 @app.route('/edit-motion/<int:topic_number>', methods=['POST'])
 @login_required
@@ -90,7 +98,7 @@ def add_edited_proposed_topic(topic_number):
     motion_update = ProposedTopic.query.get(topic_number)
     motion_update.category = request.form['category_value']
     motion_update.topic = request.form['topic']
-    motion_update.created_date = datetime.date.today
+    motion_update.created_date = datetime.date.today()
     db.session.commit()
     url = "/vote-motion/{interger}".format(interger = topic_number)
     return redirect(url)
@@ -99,14 +107,13 @@ def add_edited_proposed_topic(topic_number):
 @login_required
 def show_proposed_topic(topic_number):
     proposed_topic = ProposedTopic.query.get(topic_number)
+    if proposed_topic == None:
+        flash('The proposed motion you\'re trying to vote for doesn\'t exist.')
+        return redirect(url_for('home'))
     if proposed_topic.author_id == session['user_id']:
         user_proposed = True
     else:
         user_proposed = False
-    print user_proposed
-    if proposed_topic == None:
-        flash('This proposed motion doesn\'t exist.')
-        return redirect(url_for('home'))
     current_user_query = db.session.query(ProposedTopicVote).filter_by(proposedtopic_id = topic_number)
     current_user = [vote.vote_value for vote in current_user_query if vote.author_id == session['user_id']]
     user_comment = db.session.query(ProposedTopicComment).filter_by(proposedtopic_id = topic_number, author_id = session['user_id'])
@@ -116,8 +123,52 @@ def show_proposed_topic(topic_number):
     down_votes = db.session.query(func.count(ProposedTopicVote.id)).filter_by(vote_value = False, proposedtopic_id = topic_number)
     down_votes = down_votes[0][0]
     
+    total_users = db.session.query(func.count(User.id))
+    total_users = total_users[0][0]
+    up_vote_share = round(float(up_votes) / float(total_users), 2)
+    
+    print total_users
+    print up_votes
+    if total_users <= 5:
+        if up_votes < 3:
+            votes_needed = 3 - up_votes
+    elif total_users > 5 and total_users <= 10:
+        if up_votes < 4:
+            votes_needed = 4 - up_votes
+    elif total_users > 10 and total_users <= 25:
+        if up_votes < 5:
+            votes_needed = 5 - up_votes
+    elif total_users > 25 and total_users <= 100:
+        if vote_share < 0.15:
+            necessary_votes = int(round(0.15 * total_users, 0))
+            votes_needed = necessary_votes - up_votes
+    elif total_users > 100 and total_users <= 500:
+        if vote_share < 0.10:
+            necessary_votes = int(round(0.10 * total_users, 0))
+            votes_needed = necessary_votes - up_votes
+    elif total_users > 500:
+        if vote_share < 0.05:
+            necessary_votes = int(round(0.05 * total_users, 0))
+            votes_needed = necessary_votes - up_votes  
+    else:
+        pass
+    
     comments_query = db.session.query(User, ProposedTopicComment).join(ProposedTopicComment).filter_by(proposedtopic_id = topic_number).order_by(ProposedTopicComment.created_datetime.desc()).all()
-    number_comments = db.session.query(func.count(ProposedTopicComment.id)).filter(ProposedTopicComment.proposedtopic_id == topic_number).all()[0][0]
+    other_propTopics = ProposedTopic.query.filter(ProposedTopic.id != topic_number, User.id == session['user_id']).all()
+    other_propCategories = db.session.query(ProposedTopic.category).distinct()
+    user_available_propTopics = [{} for x in xrange(len(list(other_propCategories)))]
+    for index, cat in enumerate(other_propCategories):
+        temp_list = []
+        for top in other_propTopics:
+            if str(cat[0]) == str(top.category):
+                temp_list.append(top)
+                user_voted = db.session.query(ProposedTopicVote.id).filter_by(proposedtopic_id = top.id, author_id = session['user_id']).all()
+                if user_voted == []:
+                    temp_list.append("**You haven\'t voted on this**")
+            else:
+                pass
+        user_available_propTopics[index][str(cat[0])] = [temp_list]     
+    other_prop_topics = [i for i in user_available_propTopics if i.values()[0] != [[]]]
     
     return render_template('vote_topic.html',
         user_proposed=user_proposed,    
@@ -126,18 +177,20 @@ def show_proposed_topic(topic_number):
         user_comment=user_comment, 
         up_votes=up_votes,
         down_votes=down_votes,
-        number_comments=number_comments,
-        comments_query=comments_query)
+        comments_query=comments_query,
+        votes_needed=votes_needed,
+        other_prop_topics=other_prop_topics)        
 
 @app.route('/vote-motion/<int:topic_number>', methods=['POST'])
 @login_required
 def vote_proposed_topic(topic_number):
-    url = "/votemotion/{interger}".format(interger = topic_number)
+    url = "/vote-motion/{interger}".format(interger = topic_number)
     
     vote_value = request.form.get('user_vote')
     if vote_value == None:
         # Didn't submit a vote
         # Find a way to flash notification?
+        
         return redirect(url)
     vote_update = db.session.query(ProposedTopicVote).filter_by(proposedtopic_id = topic_number, author_id=session['user_id']).all()
     new_vote = True if vote_value == 'true' else False
@@ -160,9 +213,57 @@ def vote_proposed_topic(topic_number):
             comment_update[0].comment = comment
             comment_update[0].created_datetime = datetime.datetime.now()
             db.session.commit()
+    db.session.commit()
+    
+    up_votes = db.session.query(func.count(ProposedTopicVote.id)).filter_by(vote_value = True, proposedtopic_id = topic_number)
+    up_votes = up_votes[0][0]
+    total_users = db.session.query(func.count(User.id))
+    total_users = total_users[0][0]
+    up_vote_share = round(float(up_votes) / float(total_users), 2)
+    
+    activated_motion_url = "/arguments"
+    
+    if total_users <= 5:
+        if up_votes >= 3:
+            activate_proposed_motion(topic_number)
+            flash('The proposed motion you just voted on has successfully passed and is not active for debate. Add your arguments!')
+            return redirect(activated_motion_url)
+    elif total_users > 5 and total_users <= 10:
+        if up_votes >= 4:
+            activate_proposed_motion(topic_number)
+            flash('The proposed motion you just voted on has successfully passed and is not active for debate. Add your arguments!')
+            return redirect(activated_motion_url)
+    elif total_users > 10 and total_users <= 25:
+        if up_votes >= 5:
+            activate_proposed_motion(topic_number)
+            flash('The proposed motion you just voted on has successfully passed and is not active for debate. Add your arguments!')
+            return redirect(activated_motion_url)
+    elif total_users > 25 and total_users <= 100:
+        if vote_share > 0.15:
+            activate_proposed_motion(topic_number)
+            flash('The proposed motion you just voted on has successfully passed and is not active for debate. Add your arguments!')
+            return redirect(activated_motion_url)
+    elif total_users > 100 and total_users <= 500:
+        if vote_share > 0.10:
+            activate_proposed_motion(topic_number)
+            flash('The proposed motion you just voted on has successfully passed and is not active for debate. Add your arguments!')
+            return redirect(activated_motion_url)
+    elif total_users > 500:
+        if vote_share > 0.05:
+            activate_proposed_motion(topic_number)
+            flash('The proposed motion you just voted on has successfully passed and is not active for debate. Add your arguments!')
+            return redirect(activated_motion_url)            
+    else:
+        pass
     
     db.session.commit()
-    return redirect(url)      
+    return redirect(url) 
+
+def activate_proposed_motion(integer):
+    proposed_motion = ProposedTopic.query.get(integer)
+    db.session.add(Topic(proposed_motion.category, proposed_motion.topic, proposed_motion.author_id, True))
+    db.session.delete(proposed_motion)
+    db.session.commit()    
     
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -179,6 +280,10 @@ def register():
 @login_required
 def add_arguments():
     topic_id = db.session.query(Topic).filter_by(topic = request.form['motion_value'], status = True).all()[0]
+    forms = [request.form['abstract'], request.form['argument'], request.form['abstract1'], request.form['argument1']]
+    if '' in forms:
+       flash("You need to submit something for all the required fields!")
+       return redirect(url_for('add_arguments'))
     if request.form['user_stance'] == "pro":
         added_motion = Motion(topic_id.id, session['user_id'], True)
         db.session.add(added_motion)
@@ -202,11 +307,13 @@ def get_arguments():
     update_topic_status()
     category_filter = request.args.get('category_value', 'all')
     categories = db.session.query(Topic.category).distinct()
+    user_motions = Motion.query.filter_by(user_id = session['user_id']).all()
+    user_topics = [motion.topic_id for motion in user_motions]
     if category_filter == 'all':
-        motions = Topic.query.distinct(Topic.category).filter_by(status = True).all()
+        motions = db.session.query(Topic).filter(~ Topic.id.in_(user_topics), Topic.status == True)
         category_header = "All"
     else:
-        motions = Topic.query.filter_by(category = category_filter, status = True)
+        motions = db.session.query(Topic).filter(~ Topic.id.in_(user_topics), Topic.category == category_filter, Topic.status == True)
         category_header = category_filter
     topics = db.session.query(func.count(Topic.id)).filter_by(status = True).all()[0][0]
     randnum = random.choice(range(1, topics + 1))
@@ -239,9 +346,17 @@ def voting(topic_number):
         for position, vote in enumerate(votes):
             vote_record = Vote(argument_ids[position], motion_ids[position], int(vote), int(session['user_id']))
             db.session.add(vote_record)
+            comment_field = request.form.get('comment' + str(argument_ids[position]), None)
+            if comment_field == None or comment_field == "":
+                pass
+            else:
+                user_comment = db.session.query(ArgumentComment).filter_by(argument_id = argument_ids[position], author_id = session['user_id']).all()
+                if user_comment == []:
+                    db.session.add(ArgumentComment(comment_field, argument_ids[position], session['user_id']))
+                else:
+                    user_comment[0].comment = comment_field
+                    user_comment[0].created_datetime = datetime.datetime.now()
         db.session.commit()
-    other_users = db.session.query(Motion.id).filter_by(topic_id = topic_number).all()
-    other_motion_ids = tuple(motion[0] for motion in other_users)
     if user_motion[0].user_procon == True:
         session['user_status'] = True
         displayable_arguments = Argument.query.join(Motion, Topic).filter(Argument.procon == True, Topic.id == topic_number, Topic.status == True).all()
@@ -249,18 +364,26 @@ def voting(topic_number):
         session['user_status'] = False
         displayable_arguments = Argument.query.join(Motion, Topic).filter(Argument.procon == False, Topic.id == topic_number, Topic.status == True).all() 
     displayable_arguments = [arg for arg in displayable_arguments if arg.author_id != session['user_id']]
+    arguments = displayable_arguments
     try:
-        arguments = random.sample(displayable_arguments, 4)
+        arguments = random.sample(displayable_arguments, 3)
     except ValueError:
-        # flash messages
-        return "new url for topic with enough args to vote on"    
+        # not enough arguments submitted to vote on (4 minimum)
+        flash("There\'s not enough arguments to vote on for this motion. Check back soon!")
+        return redirect(url_for('home'))
     topic = db.session.query(Topic).filter_by(id = topic_number)[0]
     session['argument_ids'] = [argument.id for argument in arguments]
+    comments_query = db.session.query(User, ArgumentComment).join(ArgumentComment).filter(ArgumentComment.argument_id.in_(session['argument_ids'])).order_by(ArgumentComment.argument_id, ArgumentComment.created_datetime.desc()).all()
+    comment_ids = [user[0].id for user in comments_query]
+    all_arguments = []
+    for arg in arguments:
+        all_arguments.append([arg,[com for com in comments_query if com[1].argument_id == arg.id]])
     session['motion_ids'] = [argument.motion_id for argument in arguments]
     user_status = session['user_status']
     topics = db.session.query(func.count(Topic.id)).filter_by(status = True).all()[0][0]
     randnum = random.choice(range(1, topics + 1))
-    return render_template("index.html", user_status=user_status, arguments=arguments, topic=topic, other_user_motions=other_user_motions, randnum=randnum)
+       
+    return render_template("vote_argument.html", user_status=user_status, all_arguments=all_arguments, topic=topic, other_user_motions=other_user_motions, randnum=randnum)
 
     
 @app.route('/scoring/<int:topic_id>', methods=['GET'])

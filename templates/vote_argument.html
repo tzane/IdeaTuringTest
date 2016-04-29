@@ -1,0 +1,104 @@
+<html>
+  <head>
+    <title>Flask Intro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet" media="screen">
+    <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
+    <link href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet" media="screen">
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  </head>
+  <body>
+    <div class="container">
+      <h1>The Political Turing Test</h1>
+      <br>
+      <p>{% for message in get_flashed_messages() %}
+           <strong><i>--{{ message }}--</i></strong>
+         {% endfor %}
+      </p>
+      <p>Click <a href="/logout">here</a> to logout.</p>
+      <p>Click <a href="/">here</a> to go to the home page.</p>
+      <p>Click <a href="/arguments">here</a> to enter into an active debate and add your arguments.</p>
+      <p>Click <a href="/turingarguments/topic/{{ randnum }}/topscoring">here</a> to view the highest rated turing arguments.</p>
+      <br><br>
+      {% if user_status %}
+      <h2>Vote on the best arguments <strong><u>for</u></strong> the motion "{{ topic.topic }}"</h3>
+      <li>There are {{ topic.days_left() }} days remaining until this motion becomes inactive and closed.</li>
+      {% else %}
+      <h2>Vote on the best arguments <strong><u>against</u></strong> the motion "{{ topic.topic }}"</h3>
+      {% endif %}
+      <br><br>
+      <form action="" method="post">
+      {% for arg in all_arguments %}
+        <strong>Abstract:</strong> {{ arg[0].abstract }} <br>
+        <strong>Argument:</strong> {{ arg[0].argument }} <br>
+          <div class="form-group">
+            <select name="vote_value">
+              <label for="vote">Vote:</label>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+            </select>
+              <div id="parent" class="container">
+                <div class="accordion-group">
+                  <div id="div{{ arg[0].id }}" class="collapse">
+                    <!-- <button type="button" class="btn btn-danger" data-toggle="collapse" data-target="#comments" data-parent="#parent">Hide</button> -->
+                    {% if arg[1]|length > 0 %}
+                    <div id="comments" class="well">
+                      {% for com in arg[1] %}
+                      <li><i><strong>{{ com[0].name }}</strong> says</i>: {{ com[1].comment }} <strong>({{ com[1].time_since() }})</strong>.
+                      <br><br>      
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="form-group argument-box clearfix">
+                      <div class="col-sm-10">
+                      {% set vars = [] %}
+                      {% for com in arg[1] %}
+                        {% if com[0].id == session['user_id'] %}
+                          {% if vars.append(True) %}
+                          {% endif %}
+                         <textarea class="form-control" id="argument{{ arg[0].id }}" name="comment{{ arg[0].id }}" style="height: 75px;" placeholder="{{ com[1].comment }}">{{ request.form.topic }}</textarea>
+                        {% endif %}
+                      {% endfor %}
+                      {% if not vars %}
+                         <textarea class="form-control" id="argument{{ arg[0].id }}" name="comment{{ arg[0].id }}" style="height: 75px;" placeholder="Comment here (optional).">{{ request.form.topic }}</textarea>
+                      {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                  <div id="div{{ arg[0].id }}" class="collapse in">
+                    <button type="button" class="btn btn-success" data-toggle="collapse" data-target="#div{{ arg[0].id }}" data-parent="#parent">Comments ({{ arg[1]|length }})</button>
+                  </div>
+                </div>
+              </div>
+          </div> 
+      {% endfor %}          
+        <button class="btn btn-primary" type="submit">Submit</button>
+      </form>
+      {% if error %}
+        <p class="error"><strong>Error:</strong> {{ error }}</p>
+      {% endif %}
+    </div>
+    <div class="container">
+      <h3><strong>Vote on these other active motions by category:</strong></h3>
+    </div>
+    {% for motions in other_user_motions %}
+    <div class="container">
+      <h4>{{ motions.keys()[0] }}</h4>
+      <ul>
+        {% for motions in motions.values()[0] %}
+        <li><a href="/voting/{{ motions.id }}">{{ motions.topic }}</a> ({{ motions.days_left() }})</li>
+        {% endfor %}
+      </ul>
+    </div>
+      {% endfor %}
+  </body>
+</html>

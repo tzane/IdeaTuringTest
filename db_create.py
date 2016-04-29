@@ -1,5 +1,5 @@
 from app import db, bcrypt
-from models import User, Topic, Motion, Argument, Vote, ProposedTopic, ProposedTopicVote, ProposedTopicComment
+from models import User, Topic, Motion, Argument, Vote, ProposedTopic, ProposedTopicVote, ProposedTopicComment, ArgumentComment
 import datetime
 from random import randint
 
@@ -25,7 +25,7 @@ db.session.add(ProposedTopic("Constitutional Law", "Roe vs. Wade (1973) should b
 
 # boolean vote_value, proposed_topic.id, author_id
 db.session.add(ProposedTopicVote(True, 1, 2))
-db.session.add(ProposedTopicVote(True, 1, 3))
+db.session.add(ProposedTopicVote(False, 1, 3))
 db.session.add(ProposedTopicVote(False, 1, 4))
 db.session.add(ProposedTopicVote(True, 1, 5)) 
 db.session.add(ProposedTopicVote(False, 2, 1))
@@ -39,7 +39,7 @@ db.session.add(ProposedTopicVote(False, 3, 4))
 db.session.add(ProposedTopicComment("Great idea! This seems pretty clear and reasonable. Let's up-vote this people!", 1, 2))
 db.session.add(ProposedTopicComment("This shouldn't even be debated. Stop giving the evil 1% a platform. Hurr durr!", 2, 3))
 db.session.add(ProposedTopicComment("What do you mean by everyone? That's pretty important to make clear.", 2, 5))
-db.session.add(ProposedTopicComment("What about Roe vs. Wade. Can you be more specific? I'm down-voting this is clarified.", 3, 1))
+db.session.add(ProposedTopicComment("What about Roe vs. Wade? Can you be more specific? I'm down-voting this until you clarify.", 3, 1))
 
 # topic_id, user_id, user_procon
 db.session.add(Motion(1, 1, False))
@@ -128,6 +128,22 @@ db.session.add(Argument(True, "Tyler\'s pro abstract", "Tyler\'s pro argument.",
 db.session.add(Argument(True, "Kevin\'s pro abstract.", "Kevin\'s pro argument.", 3, 23))
 db.session.add(Argument(True, "David\'s pro abstract.", "David\'s pro argument.", 4, 24))
 db.session.add(Argument(True, "Nick\'s pro abstract.", "Nick\'s pro argument.", 5, 25))
+
+# comment, argument.id, author_id
+#26-30
+db.session.add(ArgumentComment("This makes no sense! Price controls =/= socialism.", 1, 5))
+db.session.add(ArgumentComment("I encourage all other voters on this issue to score this a 1.", 1, 2))
+db.session.add(ArgumentComment("Small businesses are not the 'lifeblood' of the economy and account for only 14% of US GDP according to the BLS.", 3, 2))
+db.session.add(ArgumentComment("I agree! It\'s better to focus efforts on expanding the EITC instead and work towards a guaranteed basic income in the long-term.", 2, 5))
+
+#users 3,4 commenting on IDs 26-30
+db.session.add(ArgumentComment("You need to do better than this assumed oppressor-oppressed narrative.", 26, 3))
+db.session.add(ArgumentComment("We need to emphasize the higher propensity to consume of lower-income citizens.", 27, 4))
+db.session.add(ArgumentComment("This is the best summary argument for a $15 minimum wage and I encourage all others voting to rate this argument highly!", 27, 3))
+db.session.add(ArgumentComment("Bernie Sanders must be one of the testers for this app!", 29, 3))
+db.session.add(ArgumentComment("Why is more automation at the expense of employable workers desirable?", 30, 3))
+
+db.session.add(ArgumentComment("This makes no sense!", 31, 1))
 
 # arg_id, motion_id, value, user_id
 db.session.add(Vote(2, 2, 9, 1)) 
