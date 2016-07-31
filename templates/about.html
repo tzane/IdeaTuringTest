@@ -7,6 +7,11 @@
   <body>
     <div class="container">
       <h1>The Political Turing Test</h1>
+      {% if session['logged_in'] %}
+      <p align="right">
+        Your total points:<span class="badge">{{ user_points }}</span></a><br>
+      </p>
+      {% endif %}
     </div>
     <div class="container">
       <h3>About</h3>
@@ -25,7 +30,7 @@
     </p>
     </div>
     <div class="container">
-    {% if user_status %}
+    {% if session['logged_in'] %}
     <p>Click <a href="/logout">here</a> to logout.</p>
     <p>Click <a href="/arguments">here</a> to enter into an active debate and add your arguments.</p>
     <p>Click <a href="/propose-motion">here</a> to start a new debate and propose your own motion.</p>

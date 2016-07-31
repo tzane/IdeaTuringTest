@@ -23,8 +23,7 @@
       {% endif %}
     </div>
     <div class="container">
-      <h2>Propose a new motion</h2>
-      <li>It costs 30 points to propose your own motion. </li>
+      <h2>Scoring</h2>
     </div>
     <div class="container">
       <p>{% for message in get_flashed_messages() %}
@@ -35,33 +34,50 @@
     <div class="container">
       <p>Click <a href="/logout">here</a> to logout.</p>
       <p>Click <a href="/">here</a> to return home.</p>
-      <p>Click <a href="/voting/{{ randnum }}">here</a> vote on arguments.</p>
-      <p>Click <a href="/turingarguments/topic/{{ randnum }}/topscoring">here</a> to view the highest rated turing arguments.</p>
     </div>
     <div class="container">
-      <form action="" method="post">
-        <h4>Select a category:</h4>
+
+      <form action="" method="get">
         <div class="form-group">
+          <label class="checkbox-inline active"><input type="checkbox" value="active" checked="checked" name="choice">Active</label>
+          <label class="checkbox-inline active"><input type="checkbox" value="closed" checked="checked" name="choice">Closed</label>
+        </div>
+        <h4>Categories:</h4>
+        <div class="form-group">
+          <button class="btn btn-primary" type="submit">Filter</button>
           <select name="category_value">
             <label for="category">Category</label>
+            <option value="all">All</option>
             {% for category in categories %}
             <option value="{{ category.category }}">{{ category.category }}</option>
             {% endfor %}
           </select>
         </div>
-        <div class="form-group argument-box clearfix">
-          <h4>Propose a new motion:</h4>
-          <div class="col-sm-10">
-            <textarea class="form-control" id="argument" name="topic" style="height: 50px;">{{ request.form.topic }}</textarea>
-          </div>
-        </div>
-        <h5>Give your motion the best possible chance of getting successfully passed by reviewing these helpful tips:</h5>
-        <div class="form-group">
-          <li>Be specific </li>
-          <li>Use the most relevant keyword categories.</li>
-        </div>
-        <div class="form-group">
-          <button class="btn btn-primary" type="submit">Submit</button>
+        <div class="container">            
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Date Created</th>
+                <th>Category</th>
+                <th>Motion</th>
+                <th>"Pro" Votes</th>
+                <th>"Pro" Avg Score</th>
+                <th>"Con" Votes</th>
+                <th>"Con" Avg Score</th>
+             </tr>
+            </thead>
+            <tbody>
+            {% for motion in motions %}
+              <tr>
+                <td>{{ motion.return_status() }}</td>
+                <td>{{ motion.created_date }}</td>
+                <td>{{ motion.category }}</td>
+                <td>{{ motion.topic }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
         </div>
       </form>
     </div>

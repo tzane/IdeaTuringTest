@@ -4,6 +4,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 import datetime
 
+
 class ProposedTopic(db.Model):
 
     __tablename__ = "proposed_topics"
@@ -129,7 +130,12 @@ class Topic(db.Model):
         else:
             # Adjust close_date below to non-development correct version
             return "Closed on {close_date}".format(close_date = self.created_date - datetime.timedelta(days = 10))
-        
+            
+    def return_status(self):
+        if self.status == True:
+            return "Open"
+        else:
+            return "Closed"        
     def __repr__(self):
         return self.topic
         
@@ -230,6 +236,7 @@ class User(db.Model):
     __tablename__ = "users"
     
     id = db.Column(db.Integer, primary_key=True)
+    points = db.Column(db.Integer, default=15, nullable=False)
     name = db.Column(db.String, nullable=False)
     email = db.Column(db.String, nullable=False)
     password = db.Column(db.String, nullable=False)
