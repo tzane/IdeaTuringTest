@@ -2,7 +2,10 @@
   <head>
     <title>Idea Turing Test - add arguments</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="static/bootstrap.min.css" rel="stylesheet" media="screen">
+    <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
+    <link href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet" media="screen">
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
     <style type="text/css">
         .argument-box {
             margin-bottom: 1em;
@@ -69,11 +72,17 @@
             </thead>
             <tbody>
             {% for motion in motions %}
-              <tr>
-                <td>{{ motion.return_status() }}</td>
-                <td>{{ motion.created_date }}</td>
-                <td>{{ motion.category }}</td>
-                <td>{{ motion.topic }}</td>
+              <tr data-toggle="collapse" data-target="{{ motion[0][0].id }}accordion" data-parent="#account-table">
+                <td>{{ motion[0][0].return_status() }}</td>
+                <td>{{ motion[0][0].created_date }}</td>
+                <td>{{ motion[0][0].category }}</td>
+                <td>{{ motion[0][0].topic }}</td>
+                <tr id="{{ motion[0][0].id }}accordion" class="demo out collapse">
+                  {% for m in motion[1] %}
+                    <td>{{ m.abstract }}</td>
+                    <td>{{ m.argument }}</td>
+                  {% endfor %}
+                 </tr>
               </tr>
             {% endfor %}
             </tbody>

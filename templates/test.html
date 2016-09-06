@@ -1,0 +1,106 @@
+<html>
+  <head>
+    <title>Idea Turing Test - add arguments</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
+    <link href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet" media="screen">
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <!-- <link href="static/bootstrap.min.css" rel="stylesheet" media="screen"> -->
+        <style type="text/css">
+        .argument-box {
+            margin-bottom: 1em;
+        }
+
+        .argument-box-header {
+            text-align: center;
+        }
+    </style>
+  </head>
+<body>
+  <h2> Argument Scoring</h2>
+  <form>
+    <h4>Status: </h4>
+    <label class="checkbox-inline">
+      <input type="checkbox" value="" checked="checked">Open
+    </label>
+    <label class="checkbox-inline">
+      <input type="checkbox" value="" checked="checked">Closed
+    </label>
+    <h4>Categories: </h4>
+    {% for cat in categories %}
+    <label class="checkbox-inline">
+      <input type="checkbox" value="" checked="checked">{{ cat[0] }}
+    </label>
+    {% endfor %}
+  </form>
+<table class="table table-striped" id="account-table">
+    <thead>
+        <tr>
+            <th>Status</th>
+            <th>Date Created</th>
+            <th>Category</th>
+            <th>Motion</th>
+        </tr>
+    </thead>
+    <tbody>
+      {% for motion in motions %}
+      <tr data-toggle="collapse" data-target="#accordion{{ motion[0][0].id }}" data-parent="accordion-toggle">
+        <td>{{ motion[0][0].return_status() }}</td>
+        <td>{{ motion[0][0].created_date }}</td>
+        <td>{{ motion[0][0].category }}</td>
+        <td>{{ motion[0][0].topic }}</td>
+      </tr>
+      <tr>
+        <td colspan="4" class="hiddenRow">
+          <div class="accordion-body collapse" id="accordion{{ motion[0][0].id }}">
+            <div class="accordion-inner">
+              {% for m in motion[1] %}
+                {% if m.procon == 1 %}
+              <p><b>"Pro" abstract</b>: {{ m.abstract }}</p>
+              <p><b>"Pro" argument</b>: {{ m.argument }}</p>
+                {% else %}
+              <p><b>"Con" abstract</b>: {{ m.abstract }}</p>
+              <p><b>"Con" argument</b>: {{ m.argument }}</p>
+                {% endif %}
+              <table class="table table-stripped">
+                <thead>
+                  <tr>
+                    <td>Opponent votes</td>
+                    <td>Opponent avg score</td>
+                    <td>Your argument votes</td>
+                    <td>Your argument avg score</td>
+                  </tr>
+                  <tr>
+                  {% if m.procon == 1 %}
+                    <th>{{ motion[2][4] }}</th>
+                    <th>{{ motion[2][5] }}</th>
+                    <th>{{ motion[2][6] }}</th>
+                    <th>{{ motion[2][7] }}</th>
+                  {% else %}
+                    <th>{{ motion[2][0] }}</th>
+                    <th>{{ motion[2][1] }}</th>
+                    <th>{{ motion[2][2] }}</th>
+                    <th>{{ motion[2][3] }}</th>
+                  {% endif %}
+                  </tr>
+                </thead>
+<!--                 <tbody>
+                  <tr>
+                    <td>1,314</td>
+                    <td>36</td>
+                    <td>6.8</td>
+                    <td>7.3</td>
+                  </tr>
+                </tbody> -->
+              </table>
+              {% endfor %}
+            </div>
+          </div>              
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+</table>
+</body>
+</html>

@@ -422,9 +422,21 @@ def scoring2():
     category_filter = request.args.get('category_value', 'all')
     categories = db.session.query(Topic.category).distinct()
     user_motions = Motion.query.filter_by(user_id = session['user_id']).all()
+    motion_ids = [motion.id for motion in user_motions]
     user_topics = [motion.topic_id for motion in user_motions]
-    motions = db.session.query(Topic).filter(Topic.id.in_(user_topics))
-    print request.form.getlist('choice')
+    arguments = db.session.query(Argument).filter(Argument.motion_id.in_(motion_ids))
+    motions = []
+    for motion in user_motions:
+        arguments = db.session.query(Argument).filter(Argument.motion_id == motion.id)
+        topic = db.session.query(Topic).filter(Topic.id == motion.topic_id)
+        motions.append([topic, arguments])
+    # print request.form.getlist('choice')
+    for motion in motions:
+        print "topic is...", motion[0][0]
+        print "arguments are..."
+        for m in motion[1]:
+            print m
+        print "..........."
     return render_template("scoring2.html", user_points=user_points, categories=categories, motions=motions)    
   
 @app.route('/scoring/<int:topic_id>', methods=['GET'])
@@ -611,6 +623,33 @@ def update_topic_status():
             updated_topic = Topic.query.get(topic.id)
             updated_topic.status = False
             db.session.commit()
+
+@app.route('/test', methods=['GET'])
+@login_required            
+def test():
+    user_motions = Motion.query.filter_by(user_id = session['user_id']).all()
+    user_topic_ids = [motion.topic_id for motion in user_motions]
+    categories = db.session.query(Topic.category).distinct().filter(Topic.id.in_(user_topic_ids)).all()
+    motions = []
+    for motion in user_motions:
+        arguments = db.session.query(Argument).filter(Argument.motion_id == motion.id).all()
+        topic = db.session.query(Topic).filter(Topic.id == motion.topic_id)
+        numbers = []
+        for arg in arguments:
+            arg_votes = db.session.query(func.count(Vote.id)).filter(Vote.argument_id == arg.id)[0][0]
+            arg_score = round(db.session.query(func.avg(Vote.value)).filter(Vote.argument_id == arg.id).all()[0][0], 1) if arg_votes > 0 else 0
+            motion_ids = db.session.query(Motion.id).filter(Motion.topic_id == topic[0].id, Motion.user_procon != motion.user_procon).all()
+            motion_ids = [mot[0] for mot in motion_ids]
+            argument_ids = db.session.query(Argument.id).filter(Argument.motion_id.in_(motion_ids), Argument.procon == arg.procon).all()
+            argument_ids = [arg[0] for arg in argument_ids]
+            opp_votes = db.session.query(func.count(Vote.id)).filter(Vote.argument_id.in_(argument_ids))[0][0]
+            opp_avg_score = round(db.session.query(func.avg(Vote.value)).filter(Vote.argument_id.in_(argument_ids)).all()[0][0], 1) if opp_votes > 0 else 0
+            numbers.append(opp_votes)
+            numbers.append(opp_avg_score)
+            numbers.append(arg_votes)
+            numbers.append(arg_score)  
+        motions.append([topic, arguments, numbers])
+    return render_template('test.html', motions = motions, categories = categories)
  
 if __name__ == '__main__':
     app.run(debug=True)
