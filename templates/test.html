@@ -19,20 +19,23 @@
   </head>
 <body>
   <h2> Argument Scoring</h2>
-  <form>
+  <form method="get">
     <h4>Status: </h4>
     <label class="checkbox-inline">
-      <input type="checkbox" value="" checked="checked">Open
+      <input type="checkbox" value="Open" name="open_filter">Open
     </label>
     <label class="checkbox-inline">
-      <input type="checkbox" value="" checked="checked">Closed
+      <input type="checkbox" value="Closed" name="closed_filter">Closed
     </label>
     <h4>Categories: </h4>
     {% for cat in categories %}
     <label class="checkbox-inline">
-      <input type="checkbox" value="" checked="checked">{{ cat[0] }}
+      <input type="checkbox" value="{{ cat[0] }}" name="{{ cat[0] }}">{{ cat[0] }}
     </label>
     {% endfor %}
+    <div>
+      <button class="btn btn-primary" type="submit">Filter</button>
+    </div>
   </form>
 <table class="table table-striped" id="account-table">
     <thead>

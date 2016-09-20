@@ -40,6 +40,8 @@ def home():
                 pass
         user_available_motions[index][cat[0]] = temp_list    
     all_motions = [i for i in user_available_motions if i.values()[0] != []]
+    if 'logged_in' not in session:
+        return render_template('about.html', all_motions = all_motions)
     user_topics = db.session.query(Topic.id).distinct().join(Motion).filter(Motion.user_id == session['user_id'])
     user_topics = [top[0] for top in user_topics]
     randnum = random.sample(user_topics, 1)[0]
@@ -628,8 +630,27 @@ def update_topic_status():
 @login_required            
 def test():
     user_motions = Motion.query.filter_by(user_id = session['user_id']).all()
-    user_topic_ids = [motion.topic_id for motion in user_motions]
+    user_topic_ids = [motion.topic_id for motion in user_motions] 
+    
     categories = db.session.query(Topic.category).distinct().filter(Topic.id.in_(user_topic_ids)).all()
+    filtered_categories = [str(request.args.get(i[0])) for i in categories if request.args.get(i[0]) != None]
+    
+    if len(categories) != len(filtered_categories) and len(filtered_categories) > 0:
+        topic_ids = db.session.query(Topic.id).filter(Topic.category.in_(filtered_categories)).all()
+        topic_ids = [i[0] for i in topic_ids]
+        user_motions = [motion for motion in user_motions if motion.topic_id in topic_ids]
+        
+    if request.args.get('open_filter') is not None and request.args.get('closed_filter') == None:
+        topic_ids = db.session.query(Topic.id).filter(Topic.status == True).all()
+        topic_ids = [i[0] for i in topic_ids]
+        user_motions = [motion for motion in user_motions if motion.topic_id in topic_ids]
+
+    if request.args.get('open_filter') == None and request.args.get('closed_filter') is not None:
+        topic_ids = db.session.query(Topic.id).filter(Topic.status == False).all()
+        topic_ids = [i[0] for i in topic_ids]        
+        user_motions = [motion for motion in user_motions if motion.topic_id in topic_ids]
+
+    
     motions = []
     for motion in user_motions:
         arguments = db.session.query(Argument).filter(Argument.motion_id == motion.id).all()
