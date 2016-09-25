@@ -649,28 +649,59 @@ def test():
         topic_ids = db.session.query(Topic.id).filter(Topic.status == False).all()
         topic_ids = [i[0] for i in topic_ids]        
         user_motions = [motion for motion in user_motions if motion.topic_id in topic_ids]
-
-    
+   
     motions = []
+    opponent_turing_args_ids = []
+    opponent_true_args_ids = []
+    user_turing_args_ids = []
+    user_true_args_ids = []
     for motion in user_motions:
         arguments = db.session.query(Argument).filter(Argument.motion_id == motion.id).all()
         topic = db.session.query(Topic).filter(Topic.id == motion.topic_id)
         numbers = []
+        opp_user_boolean = not motion.user_procon
+        opponent_motions = db.session.query(Motion.id).filter(Motion.topic_id == motion.topic_id, Motion.user_procon == opp_user_boolean).all()
+        opponent_motions = [mot[0] for mot in opponent_motions]
+        opponent_arg_ids = db.session.query(Argument).filter(Argument.motion_id.in_(opponent_motions)).all()
+        user_turing_arg_ind = True
         for arg in arguments:
+            if motion.user_procon == arg.procon:
+                user_turing_arg_ind = False
+                user_true_args_ids.append(arg.id)
+                for opp_arg in opponent_arg_ids:
+                    if opp_arg.procon == arg.procon:
+                        opponent_turing_args_ids.append(opp_arg.id)
+                    else:
+                        opponent_true_args_ids.append(opp_arg.id)
+            else:
+                user_turing_args_ids.append(arg.id)
             arg_votes = db.session.query(func.count(Vote.id)).filter(Vote.argument_id == arg.id)[0][0]
-            arg_score = round(db.session.query(func.avg(Vote.value)).filter(Vote.argument_id == arg.id).all()[0][0], 1) if arg_votes > 0 else 0
+            arg_score = round(db.session.query(func.avg(Vote.value)).filter(Vote.argument_id == arg.id).all()[0][0], 2) if arg_votes > 0 else 0
             motion_ids = db.session.query(Motion.id).filter(Motion.topic_id == topic[0].id, Motion.user_procon != motion.user_procon).all()
             motion_ids = [mot[0] for mot in motion_ids]
             argument_ids = db.session.query(Argument.id).filter(Argument.motion_id.in_(motion_ids), Argument.procon == arg.procon).all()
             argument_ids = [arg[0] for arg in argument_ids]
             opp_votes = db.session.query(func.count(Vote.id)).filter(Vote.argument_id.in_(argument_ids))[0][0]
-            opp_avg_score = round(db.session.query(func.avg(Vote.value)).filter(Vote.argument_id.in_(argument_ids)).all()[0][0], 1) if opp_votes > 0 else 0
+            opp_avg_score = round(db.session.query(func.avg(Vote.value)).filter(Vote.argument_id.in_(argument_ids)).all()[0][0], 2) if opp_votes > 0 else 0
             numbers.append(opp_votes)
             numbers.append(opp_avg_score)
             numbers.append(arg_votes)
             numbers.append(arg_score)  
-        motions.append([topic, arguments, numbers])
-    return render_template('test.html', motions = motions, categories = categories)
+        motions.append([topic, arguments, numbers, motion.user_procon])
+    user_turing_votes = db.session.query(func.count(Vote.id)).filter(Vote.argument_id.in_(user_turing_args_ids))[0][0]
+    user_turing_avg = db.session.query(func.avg(Vote.value)).filter(Vote.argument_id.in_(user_turing_args_ids))
+    user_turing_avg = round(user_turing_avg[0][0], 2)
+    user_true_votes = db.session.query(func.count(Vote.id)).filter(Vote.argument_id.in_(user_true_args_ids))[0][0]
+    user_true_avg = db.session.query(func.avg(Vote.value)).filter(Vote.argument_id.in_(user_true_args_ids))
+    user_true_avg = round(user_true_avg[0][0], 2)
+    opp_true_arg_votes = db.session.query(Argument.author_id, func.avg(Vote.value)).join(Vote).filter(Argument.id.in_(opponent_true_args_ids)).group_by(Argument.author_id).all()
+    opp_true_avg = round(db.session.query(func.avg(Vote.value)).filter(Vote.argument_id.in_(opponent_true_args_ids))[0][0], 2)
+    user_turing_percentile = round(((float(len([round(avg[1], 2) for avg in opp_true_arg_votes if round(avg[1], 2) < user_turing_avg])) / len(opp_true_arg_votes))*100), 1)
+    opp_turing_arg_votes = db.session.query(Argument.author_id, func.avg(Vote.value)).join(Vote).filter(Argument.id.in_(opponent_turing_args_ids)).group_by(Argument.author_id).all()
+    opp_turing_avg = round(db.session.query(func.avg(Vote.value)).filter(Vote.argument_id.in_(opponent_turing_args_ids))[0][0], 2)
+    user_true_percentile = round(((float(len([round(avg[1], 2) for avg in opp_turing_arg_votes if round(avg[1], 2) < user_true_avg])) / len(opp_turing_arg_votes))*100), 1)
+    summary_statistics = [user_turing_votes, user_turing_avg, opp_true_avg, user_turing_percentile, user_true_votes, user_true_avg, opp_turing_avg, user_true_percentile]
+    return render_template('test.html', motions = motions, categories = categories, summary_statistics = summary_statistics)
  
 if __name__ == '__main__':
     app.run(debug=True)

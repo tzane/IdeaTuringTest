@@ -7,7 +7,7 @@
     <link href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet" media="screen">
     <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
     <!-- <link href="static/bootstrap.min.css" rel="stylesheet" media="screen"> -->
-        <style type="text/css">
+    <style type="text/css">
         .argument-box {
             margin-bottom: 1em;
         }
@@ -37,6 +37,18 @@
       <button class="btn btn-primary" type="submit">Filter</button>
     </div>
   </form>
+  <div class="container">
+    <h5>Your "turing" arguments (i.e. your arguments you wrote contra your position on the motions below) received an average score of <b>{{ summary_statistics[1] }}</b>
+     (out of 10) based on <b>{{ summary_statistics[0] }}</b> votes from your opponents (i.e. those who hold the opposite position). Your "turing" arguments scored higher 
+     than <b>{{ summary_statistics[3] }}%</b> of all the arguments your opponents wrote affirming their position. The average score of your opponent's affirmation 
+     arguments is <b>{{ summary_statistics[2] }}</b> (out of 10).</h5>
+  </div>
+  <div class="container">
+    <h5>Your affirmation arguments (i.e. your arguments affirming your position) received an average score of <b>{{ summary_statistics[5] }}</b>
+     (out of 10) based on <b>{{ summary_statistics[4] }}</b> votes from your opponents. Your affirmation arguments scored higher 
+     than <b>{{ summary_statistics[7] }}%</b> of all your opponent's "turing" arguments. The average score of your opponent's "turing" 
+     arguments is <b>{{ summary_statistics[6] }}</b> (out of 10).</h5>
+  </div>
 <table class="table table-striped" id="account-table">
     <thead>
         <tr>
@@ -44,6 +56,7 @@
             <th>Date Created</th>
             <th>Category</th>
             <th>Motion</th>
+            <th>Position</th>
         </tr>
     </thead>
     <tbody>
@@ -53,18 +66,29 @@
         <td>{{ motion[0][0].created_date }}</td>
         <td>{{ motion[0][0].category }}</td>
         <td>{{ motion[0][0].topic }}</td>
+        {% if motion[3] == True %}
+        <td>For</td>
+        {% else %}
+        <td>Against</td>
+        {% endif %}
       </tr>
       <tr>
-        <td colspan="4" class="hiddenRow">
+        <td colspan="5" class="hiddenRow">
           <div class="accordion-body collapse" id="accordion{{ motion[0][0].id }}">
             <div class="accordion-inner">
               {% for m in motion[1] %}
                 {% if m.procon == 1 %}
               <p><b>"Pro" abstract</b>: {{ m.abstract }}</p>
               <p><b>"Pro" argument</b>: {{ m.argument }}</p>
+                  {% if motion[3] == False %}
+                <li><i>This is your "turing" argument.</i></li>
+                  {% endif %}
                 {% else %}
               <p><b>"Con" abstract</b>: {{ m.abstract }}</p>
               <p><b>"Con" argument</b>: {{ m.argument }}</p>
+                  {% if motion[3] == True %}
+                <li><i>This is your "turing" argument.</i></li>
+                  {% endif %}
                 {% endif %}
               <table class="table table-stripped">
                 <thead>
