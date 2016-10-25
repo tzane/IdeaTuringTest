@@ -55,7 +55,8 @@
       </form>
 
 
-      <form action="" method="post">
+      <form class="form-signin" role="form" action="" method="post">
+        {{ form.csrf_token }}
         <div class="form-group">
           <h4>Active motions by category: <strong>{{ category_header }}</strong></h4>
           {% for motion in motions %}
@@ -82,12 +83,26 @@
           <h3 class="argument-box-header">Write an argument <strong>for</strong> the motion.</h3>
           <label for="title" class="col-sm-2 control-label">'Pro'-Abstract:</label>
           <div class="col-sm-10">
-            <input class="form-control" id="abstract" name="abstract" type="text" value="{{ request.form.abstract }}">
+            {{ form.pro_abstract(class_="form-control") }}
+            <span class="error">
+            {% if form.pro_abstract.errors %}
+              {% for error in form.pro_abstract.errors %}
+                {{ error }}
+              {% endfor %}
+            {% endif %}
+            </span>
           </div>
 
           <label for="Content" class="col-sm-2 control-label">'Pro'-Argument:</label>
           <div class="col-sm-10">
-            <textarea class="form-control" id="argument" name="argument" style="height: 300px;">{{ request.form.argument }}</textarea>
+            {{ form.pro_argument(class="form-control", **{'style':'height: 300px;'}) }}
+            <span class="error">
+            {% if form.pro_argument.errors %}
+              {% for error in form.pro_argument.errors %}
+                {{ error }}
+              {% endfor %}
+            {% endif %}
+            </span>
           </div>
         </div>
 
@@ -95,12 +110,26 @@
           <h3 class="argument-box-header">Write an argument <strong>against</strong> the motion.</h3>
           <label for="title" class="col-sm-2 control-label">'Con'-Abstract:</label>
           <div class="col-sm-10">
-            <input class="form-control" id="abstract1" name="abstract1" type="text" value="{{ request.form.abstract1 }}">
+            {{ form.con_abstract(class_="form-control") }}
+            <span class="error">
+            {% if form.con_abstract.errors %}
+              {% for error in form.con_abstract.errors %}
+                {{ error }}
+              {% endfor %}
+            {% endif %}
+            </span>
           </div>
 
           <label for="Content" class="col-sm-2 control-label">'Con'-Argument:</label>
           <div class="col-sm-10">
-            <textarea class="form-control" id="argument1" name="argument1" style="height: 300px;">{{ request.form.argument1 }}</textarea>
+            {{ form.con_argument(class="form-control", **{'style':'height: 300px;'}) }}
+            <span class="error">
+            {% if form.con_argument.errors %}
+              {% for error in form.con_argument.errors %}
+                {{ error }}
+              {% endfor %}
+            {% endif %}
+            </span>
           </div>
         </div>
         <div class="form-group">

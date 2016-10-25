@@ -25,30 +25,46 @@
       <p>Click <a href="/turingarguments/topic/{{ randnum }}/topscoring">here</a> to view the highest rated turing arguments.</p>
       <br><br>
       {% if user_status %}
-      <h2>Vote on the best arguments <strong><u>for</u></strong> the motion "{{ topic.topic }}"</h3>
-      <li>There are {{ topic.days_left() }} days remaining until this motion becomes inactive and closed.</li>
+      <h3>Vote on the best arguments <strong><u>for</u></strong> the motion "{{ topic.topic }}"</h3>
       {% else %}
-      <h2>Vote on the best arguments <strong><u>against</u></strong> the motion "{{ topic.topic }}"</h3>
+      <h3>Vote on the best arguments <strong><u>against</u></strong> the motion "{{ topic.topic }}"</h3>
       {% endif %}
+      <li>There are {{ topic.days_left() }} days remaining until this motion becomes inactive and closed.</li>
       <br><br>
       <form action="" method="post">
+      {{ form.csrf_token }}
       {% for arg in all_arguments %}
         <strong>Abstract:</strong> {{ arg[0].abstract }} <br>
         <strong>Argument:</strong> {{ arg[0].argument }} <br>
           <div class="form-group">
-            <select name="vote_value">
-              <label for="vote">Vote:</label>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-                <option value="8">8</option>
-                <option value="9">9</option>
-                <option value="10">10</option>
-            </select>
+          <label for="vote_value">Vote:</label>
+            {% if loop.index0 == 0 %}
+                {{ form.first_vote }}
+                <span class="error">
+                    {% if form.first_vote.errors %}
+                      {% for error in form.first_vote.errors %}
+                        {{ error }}
+                      {% endfor %}
+                    {% endif %}
+            {% elif loop.index0 == 1 %}
+                {{ form.second_vote }}
+                <span class="error">
+                    {% if form.second_vote.errors %}
+                      {% for error in form.second_vote.errors %}
+                        {{ error }}
+                      {% endfor %}
+                    {% endif %}
+                </span>
+            {% else %}
+                {{ form.third_vote }}
+                <span class="error">
+                    {% if form.third_vote.errors %}
+                      {% for error in form.third_vote.errors %}
+                        {{ error }}
+                      {% endfor %}
+                    {% endif %}
+            {% endif %}
+                </span>
               <div id="parent" class="container">
                 <div class="accordion-group">
                   <div id="div{{ arg[0].id }}" class="collapse">
@@ -86,9 +102,6 @@
       {% endfor %}          
         <button class="btn btn-primary" type="submit">Submit</button>
       </form>
-      {% if error %}
-        <p class="error"><strong>Error:</strong> {{ error }}</p>
-      {% endif %}
     </div>
     <div class="container">
       <h3><strong>Vote on these other active motions by category:</strong></h3>

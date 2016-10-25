@@ -2,78 +2,137 @@
   <head>
     <title>Idea Turing Test - add arguments</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
     <link href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet" media="screen">
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <!-- <link href="static/bootstrap.min.css" rel="stylesheet" media="screen"> -->
     <style type="text/css">
         .argument-box {
             margin-bottom: 1em;
         }
-        
+
         .argument-box-header {
             text-align: center;
         }
     </style>
   </head>
-  <body>
-    <div class="container">
-      <h1>The Political Turing Test</h1>
-      <h2>Argument Scoring</h2>
-      <p>Here's how your submitted arguments are scoring..</p>
-      <div class="container">
-          <p>Click <a href="/logout">here</a> to logout.</p>
-          <p>Click <a href="/">here</a> to return home.</p>
-          <p>Click <a href="/voting/{{ randnum }}">here</a> vote on arguments.</p>
-          <p>Click <a href="/turingarguments/topic/{{ randnum }}/topscoring">here</a> to view the highest rated turing arguments.</p>
-      </div>
-      <h3>The motion: <i>"{{ current_topic.topic }}"</i></h3>
-      <label>You registered your position as <u>{{ user_position }}</u> the motion.</label>
-        <div class="form-group argument-box clearfix">
-          <h3 class="argument-box-header">Your 'pro' argument <strong>for</strong> the motion:</h3>
-        </div>
-        <div class="form-group argument-box clearfix">
-          <strong>Abstract:</strong> {{ user_proargument.abstract }}
-        </div>
-        <div class="form-group argument-box clearfix">
-          <strong>Argument:</strong> {{ user_proargument.argument }}
-        </div>
-        <div class="form-group argument-box clearfix">
-          <ul>
-              <li>Total votes: {{ user_proargument_votes }} </li>
-              <li>Average score (out of 10): {{ user_proargument_avgvotes }} </li>
-          </ul>
-        </div>
-        <div class="form-group argument-box clearfix">
-          <h3 class="argument-box-header">Your 'con' argument <strong>against</strong> the motion:</h3>
-        </div>
-        <div class="form-group argument-box clearfix">
-          <strong>Abstract:</strong> {{ user_conargument.abstract }}
-        </div>
-        <div class="form-group argument-box clearfix">
-          <strong>Argument:</strong> {{ user_conargument.argument }}
-        </div>
-        <div class="form-group argument-box clearfix">
-          <ul>
-              <li>Total votes: {{ user_conargument_votes  }} </li>
-              <li>Average score (out of 10): {{ user_conargument_avgvotes  }} </li>
-          </ul>
-        </div>
-        <div class="form-group argument-box clearfix">
-          <h4>The average score of your 'turing argument' was higher than <strong>{{ percentile_ranking }}%</strong> of those who wrote 'turing arguments' 
-          from the opposite position. 68% of the users writing 'turing arguments' from the opposite position had averages scores between {{ opp_lower_bound }} and {{ opp_upper_bound }} 
-          with a total of <strong>{{ other_turing_votes }}</strong> votes.</h4>
-        </div>
+<body>
+  <h2> Argument Scoring</h2>
+  <div class="container">
+    <p align="right">
+        Your total points:<span class="badge">{{ user_points }}</span></a><br>
+    </p>
+  </div>
+  <form method="get">
+    <h4>Status: </h4>
+    <label class="checkbox-inline">
+      <input type="checkbox" value="Open" name="open_filter">Open
+    </label>
+    <label class="checkbox-inline">
+      <input type="checkbox" value="Closed" name="closed_filter">Closed
+    </label>
+    <h4>Categories: </h4>
+    {% for cat in categories %}
+    <label class="checkbox-inline">
+      <input type="checkbox" value="{{ cat[0] }}" name="{{ cat[0] }}">{{ cat[0] }}
+    </label>
+    {% endfor %}
+    <div>
+      <button class="btn btn-primary" type="submit">Filter</button>
     </div>
-    <div class="container">
-      <h3><strong>Review the scoring of your arguments on other motions you've submitted arguments for:</strong></h3>
-    </div>
-    {% for motions in other_user_motions %}
-    <div class="container">
-      <h4>{{ motions.keys()[0] }}</h4>
-      <ul>
-        {% for motions in motions.values()[0] %}
-        <li><a href="/scoring/{{ motions.id }}">{{ motions.topic }}</a> ({{ motions.days_left() }})</li>
-        {% endfor %}
-      </ul>
-    </div>
+  </form>
+  <div class="container">
+    <h5>Your "turing" arguments (i.e. your arguments you wrote contra your position on the motions below) received an average score of <b>{{ summary_statistics[1] }}</b>
+     (out of 10) based on <b>{{ summary_statistics[0] }}</b> votes from your opponents (i.e. those who hold the opposite position). Your turing arguments scored higher 
+     than <b>{{ summary_statistics[3] }}%</b> of all the arguments your opponents wrote affirming their positions. The average score of your opponent's affirmation 
+     arguments is <b>{{ summary_statistics[2] }}</b> (out of 10).</h5>
+  </div>
+  <div class="container">
+    <h5>Your "affirmation" arguments (i.e. your arguments you wrote affirming your position) received an average score of <b>{{ summary_statistics[5] }}</b>
+     (out of 10) based on <b>{{ summary_statistics[4] }}</b> votes from others holding your same positions. Your affirmation arguments scored higher 
+     than <b>{{ summary_statistics[7] }}%</b> of all your opponent's "turing" arguments. The average score of your opponent's turing 
+     arguments is <b>{{ summary_statistics[6] }}</b> (out of 10).</h5>
+  </div>
+<table class="table table-striped" id="account-table">
+    <thead>
+        <tr>
+            <th>Status</th>
+            <th>Date Created</th>
+            <th>Category</th>
+            <th>Motion</th>
+            <th>Position</th>
+        </tr>
+    </thead>
+    <tbody>
+      {% for motion in motions %}
+      <tr data-toggle="collapse" data-target="#accordion{{ motion[0][0].id }}" data-parent="accordion-toggle">
+        <td>{{ motion[0][0].return_status() }}</td>
+        <td>{{ motion[0][0].created_date }}</td>
+        <td>{{ motion[0][0].category }}</td>
+        <td>{{ motion[0][0].topic }}</td>
+        {% if motion[3] == True %}
+        <td>For</td>
+        {% else %}
+        <td>Against</td>
+        {% endif %}
+      </tr>
+      <tr>
+        <td colspan="5" class="hiddenRow">
+          <div class="accordion-body collapse" id="accordion{{ motion[0][0].id }}">
+            <div class="accordion-inner">
+              {% for m in motion[1] %}
+                {% if m.procon == 1 %}
+              <p><b>"Pro" abstract</b>: {{ m.abstract }}</p>
+              <p><b>"Pro" argument</b>: {{ m.argument }}</p>
+                  {% if motion[3] == False %}
+                <li><i>This is your "turing" argument.</i></li>
+                  {% endif %}
+                {% else %}
+              <p><b>"Con" abstract</b>: {{ m.abstract }}</p>
+              <p><b>"Con" argument</b>: {{ m.argument }}</p>
+                  {% if motion[3] == True %}
+                <li><i>This is your "turing" argument.</i></li>
+                  {% endif %}
+                {% endif %}
+              <table class="table table-stripped">
+                <thead>
+                  <tr>
+                    <td>Opponent votes</td>
+                    <td>Opponent avg score</td>
+                    <td>Your argument votes</td>
+                    <td>Your argument avg score</td>
+                  </tr>
+                  <tr>
+                  {% if m.procon == 1 %}
+                    <th>{{ motion[2][4] }}</th>
+                    <th>{{ motion[2][5] }}</th>
+                    <th>{{ motion[2][6] }}</th>
+                    <th>{{ motion[2][7] }}</th>
+                  {% else %}
+                    <th>{{ motion[2][0] }}</th>
+                    <th>{{ motion[2][1] }}</th>
+                    <th>{{ motion[2][2] }}</th>
+                    <th>{{ motion[2][3] }}</th>
+                  {% endif %}
+                  </tr>
+                </thead>
+<!--                 <tbody>
+                  <tr>
+                    <td>1,314</td>
+                    <td>36</td>
+                    <td>6.8</td>
+                    <td>7.3</td>
+                  </tr>
+                </tbody> -->
+              </table>
+              {% endfor %}
+            </div>
+          </div>              
+        </td>
+      </tr>
       {% endfor %}
-  </body>
+    </tbody>
+</table>
+</body>
 </html>

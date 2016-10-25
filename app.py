@@ -3,7 +3,7 @@ from flask_restful import reqparse
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.bcrypt import Bcrypt
 from functools import wraps
-from forms import LoginForm, RegisterForm
+from forms import LoginForm, RegisterForm, ArgumentsForm, VoteArgumentsForm
 from sqlalchemy.sql import func, expression
 from sqlalchemy.orm import aliased
 from numpy import average, std
@@ -44,7 +44,10 @@ def home():
         return render_template('about.html', all_motions = all_motions)
     user_topics = db.session.query(Topic.id).distinct().join(Motion).filter(Motion.user_id == session['user_id'])
     user_topics = [top[0] for top in user_topics]
-    randnum = random.sample(user_topics, 1)[0]
+    if user_topics == []:
+        randnum = 1
+    else:
+        randnum = random.sample(user_topics, 1)[0]
     user_points = get_user_points()
     proposed_topics = db.session.query(ProposedTopic.id).distinct()
     proposed_topics = [prop[0] for prop in proposed_topics]
@@ -272,66 +275,27 @@ def activate_proposed_motion(integer):
     db.session.add(Topic(proposed_motion.category, proposed_motion.topic, proposed_motion.author_id, True))
     db.session.delete(proposed_motion)
     db.session.commit()    
-    
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        user = User(request.form['name'], request.form['email'],
-                    request.form['password'])
+    form = RegisterForm()
+    if form.validate_on_submit():
+        user = User(
+            name=form.username.data,
+            email=form.email.data,
+            password=form.password.data
+        )
         db.session.add(user)
         db.session.commit()
-        flash('Thanks for registering')
-        return redirect(url_for('login'))
-    return render_template('register.html')    
+        session['logged_in'] = True
+        session['user_id'] = user.id
+        flash('Thanks for registering!')
+        return redirect(url_for('home'))
+    return render_template('register.html', form=form)
 
-@app.route('/arguments', methods=['POST'])
+@app.route('/arguments', methods=['POST','GET'])
 @login_required
 def add_arguments():
-    topic_id = db.session.query(Topic).filter_by(topic = request.form['motion_value'], status = True).all()[0]
-    forms = [request.form['abstract'], request.form['argument'], request.form['abstract1'], request.form['argument1']]
-    if '' in forms:
-       flash("You need to submit something for all the required fields!")
-       return redirect(url_for('add_arguments'))
-    
-    closed_topics = db.session.query(Topic.id).filter_by(status = False).all()
-    closed_topics = [elem[0] for elem in closed_topics]
-    votes_per_topic = db.session.query(Motion.topic_id, func.count(Vote.id)).join(Vote).filter(~ Motion.topic_id.in_(closed_topics), Vote.voter_id == session['user_id']).group_by(Motion.topic_id).all()
-    points = get_user_points()
-    if points < 15:
-       flash("You don't have enough points! You need to earn more by voting more arguments.")
-       return redirect(url_for('arguments'))
-    
-    for tuple in votes_per_topic:
-       if tuple[1] < 9:
-          message = "You need to vote on arguments at least 9 times for every new debate you enter before proposing your own. You need to vote {integer} more times on this issue.".format(integer = 9 - tuple[1])
-          url = "/voting/{interger}".format(interger = tuple[0])
-          flash(message)
-          return redirect(url)
-              
-    if request.form['user_stance'] == "pro":
-        added_motion = Motion(topic_id.id, session['user_id'], True)
-        db.session.add(added_motion)
-    else:
-        added_motion = Motion(topic_id.id, session['user_id'], False)
-        db.session.add(added_motion)   
-    motion_id = db.session.query(Motion.id).order_by(Motion.id.desc()).first()[0]
-    pro_argument = Argument(True, request.form['abstract'], request.form['argument'], session['user_id'], motion_id)
-    con_argument = Argument(False, request.form['abstract1'], request.form['argument1'], session['user_id'], motion_id)
-    db.session.add(pro_argument)
-    db.session.add(con_argument)
-    
-    user = User.query.filter_by(id=session['user_id'])
-    user[0].points -= 15
-    
-    db.session.commit()
-    
-    flash("You just submitted your arguments which other users will vote on. Now go vote on theirs and earn some credits back!")
-    url = "/voting/{interger}".format(interger = topic_id.id)
-    return redirect(url)
- 
-@app.route('/arguments', methods=['GET'])
-@login_required
-def get_arguments():
     user_points = get_user_points()
     update_topic_status()
     category_filter = request.args.get('category_value', 'all')
@@ -346,16 +310,101 @@ def get_arguments():
         category_header = category_filter
     topics = db.session.query(func.count(Topic.id)).filter_by(status = True).all()[0][0]
     randnum = random.choice(range(1, topics + 1))
-    return render_template('arguments.html', category_header = category_header, categories=categories, motions=motions, randnum=randnum, user_points=user_points)
+    
+    form = ArgumentsForm()
+    if form.validate_on_submit():
+        votes_per_topic = db.session.query(Motion.topic_id, func.count(Vote.id)).join(Vote).filter(Motion.topic_id.in_(user_topics), Vote.voter_id == session['user_id']).group_by(Motion.topic_id).all()
+        for position, tuple in enumerate(votes_per_topic):
+            if tuple[0] != user_topics[position]:
+                message = "You need to vote on arguments at least 9 times for every new debate you enter before proposing your own. You need to vote 9 more times on this issue."
+                url = "/voting/{integer}".format(integer = user_topics[position])
+                flash(message)
+                return redirect(url)
+            if tuple[1] < 9:
+                message = "You need to vote on arguments at least 9 times for every new debate you enter before proposing your own. You need to vote {integer} more times on this issue.".format(integer = 9 - tuple[1])
+                url = "/voting/{integer}".format(integer = tuple[0])
+                flash(message)
+                return redirect(url)
+        topic_id = db.session.query(Topic).filter_by(topic = request.form['motion_value'], status = True).all()[0]
+        if request.form['user_stance'] == "pro":
+            added_motion = Motion(topic_id.id, session['user_id'], True)
+            db.session.add(added_motion)
+        else:
+            added_motion = Motion(topic_id.id, session['user_id'], False)
+            db.session.add(added_motion)
+        motion_id = db.session.query(Motion.id).order_by(Motion.id.desc()).first()[0]
+        pro_argument = Argument(True, form.pro_abstract.data, form.pro_argument.data, session['user_id'], motion_id)
+        con_argument = Argument(False, form.con_abstract.data, form.con_argument.data, session['user_id'], motion_id)
+        db.session.add(pro_argument)
+        db.session.add(con_argument)
+
+        user = User.query.filter_by(id=session['user_id'])
+        user[0].points -= 15
+        db.session.commit()
+        
+        flash("You just submitted your arguments which other users will vote on. Now go vote on theirs and earn some credits back!")
+        url = "/voting/{integer}".format(integer = topic_id.id)
+        return redirect(url)       
+    return render_template('arguments.html', form=form, category_header = category_header, categories=categories, motions=motions, randnum=randnum, user_points=user_points)
+
     
 @app.route('/voting/<int:topic_number>', methods=['GET','POST'])
 @login_required    
 def voting(topic_number):
-    user_motion = db.session.query(Motion).filter_by(topic_id = topic_number, user_id = session['user_id']).all()
-    user_points = get_user_points()
     user = User.query.filter_by(id=session['user_id'])
+    form = VoteArgumentsForm()
+    user_motion = db.session.query(Motion).filter_by(topic_id = topic_number, user_id = session['user_id']).all()
+    if form.validate_on_submit():
+        user_turing_pos = not user_motion[0].user_procon
+        user_turing_arg = db.session.query(Argument).filter_by(motion_id = user_motion[0].id, procon = user_turing_pos).all()
+        user_turing_votes = db.session.query(func.count(Vote.id)).filter_by(argument_id = user_turing_arg[0].id).all()[0][0]
+        # For production version adjust this 15 number (minimal number of argument votes) to optimal setting
+        if user_turing_votes > 15:
+            user_turing_avg = round(db.session.query(func.avg(Vote.value)).filter_by(argument_id = user_turing_arg[0].id).all()[0][0], 2)
+            opp_motion_ids = db.session.query(Motion.id).filter_by(topic_id = topic_number, user_procon = user_turing_pos).all()
+            opp_motion_ids = [motion[0] for motion in opp_motion_ids]
+            opp_turing_args = db.session.query(Argument.id).filter(Argument.motion_id.in_(opp_motion_ids), Argument.procon == user_motion[0].user_procon).all()
+            opp_turing_args = [arg[0] for arg in opp_turing_args]
+            opp_turing_votes = db.session.query(Vote.argument_id, func.count(Vote.id)).filter(Vote.argument_id.in_(opp_turing_args)).group_by(Vote.argument_id).all()
+            valid_opp_tur_ids = [tur_arg[0] for tur_arg in opp_turing_votes if tur_arg[1] > 15]
+            valid_opp_tur_score = round(db.session.query(func.avg(Vote.value)).filter(Vote.argument_id.in_(valid_opp_tur_ids)).all()[0][0], 1)
+            extra_votes = user_turing_avg - valid_opp_tur_score
+            print user_turing_avg
+            print valid_opp_tur_score
+            extra_votes = int(extra_votes)
+            if 1 < extra_votes <= 4:
+                for integer in range(0, extra_votes):
+                    db.session.add(Vote(session['argument_ids'][0], session['motion_ids'][0], form.first_vote.data, session['user_id']))
+                    db.session.add(Vote(session['argument_ids'][1], session['motion_ids'][1], form.second_vote.data, session['user_id']))
+                    db.session.add(Vote(session['argument_ids'][2], session['motion_ids'][2], form.third_vote.data, session['user_id']))
+                message = "You get an additional {integer} duplicate votes!".format(integer = extra_votes - 1)
+                flash(message)
+            else:
+                db.session.add(Vote(session['argument_ids'][0], session['motion_ids'][0], form.first_vote.data, session['user_id']))
+                db.session.add(Vote(session['argument_ids'][1], session['motion_ids'][1], form.second_vote.data, session['user_id']))
+                db.session.add(Vote(session['argument_ids'][2], session['motion_ids'][2], form.third_vote.data, session['user_id']))
+        else:           
+            db.session.add(Vote(session['argument_ids'][0], session['motion_ids'][0], form.first_vote.data, session['user_id']))
+            db.session.add(Vote(session['argument_ids'][1], session['motion_ids'][1], form.second_vote.data, session['user_id']))
+            db.session.add(Vote(session['argument_ids'][2], session['motion_ids'][2], form.third_vote.data, session['user_id']))
+        for number in range(0, 3):
+            comment_field = request.form.get('comment' + str(session['argument_ids'][number]), None)
+            if comment_field == None or comment_field == "":
+                pass
+            else:
+                user_comment = db.session.query(ArgumentComment).filter_by(argument_id = session['argument_ids'][number], author_id = session['user_id']).all()
+                if user_comment == []:
+                    db.session.add(ArgumentComment(comment_field, session['argument_ids'][number], session['user_id']))
+                    print "submitting comment " + comment_field + " for argument id " + str(session['argument_ids'][number])
+                else:
+                    user_comment[0].comment = comment_field
+                    user_comment[0].created_datetime = datetime.datetime.now()
+        user[0].points += 3
+        db.session.commit()
+        url = "/voting/{integer}".format(integer = topic_number)
+        return redirect(url)
     if user_motion == []:
-        flash('You need to submit arguments before you can vote!')
+        flash('You need to submit arguments for that motion before you can vote!')
         return redirect(url_for('add_arguments'))
     update_topic_status()
     other_topics = Topic.query.join(Motion, User).filter(Motion.topic_id != topic_number, User.id == session['user_id']).all()
@@ -370,25 +419,7 @@ def voting(topic_number):
                 pass
         user_available_motions[index][str(cat[0])] = temp_list   
     other_user_motions = [i for i in user_available_motions if i.values()[0] != []]
-    if request.method == 'POST':
-        argument_ids = session['argument_ids']
-        motion_ids = session['motion_ids']
-        votes = request.form.getlist('vote_value')
-        for position, vote in enumerate(votes):
-            vote_record = Vote(argument_ids[position], motion_ids[position], int(vote), int(session['user_id']))
-            db.session.add(vote_record)
-            comment_field = request.form.get('comment' + str(argument_ids[position]), None)
-            if comment_field == None or comment_field == "":
-                pass
-            else:
-                user_comment = db.session.query(ArgumentComment).filter_by(argument_id = argument_ids[position], author_id = session['user_id']).all()
-                if user_comment == []:
-                    db.session.add(ArgumentComment(comment_field, argument_ids[position], session['user_id']))
-                else:
-                    user_comment[0].comment = comment_field
-                    user_comment[0].created_datetime = datetime.datetime.now()
-        user[0].points += 3
-        db.session.commit()
+    user_points = get_user_points()
     if user_motion[0].user_procon == True:
         session['user_status'] = True
         displayable_arguments = Argument.query.join(Motion, Topic).filter(Argument.procon == True, Topic.id == topic_number, Topic.status == True).all()
@@ -400,9 +431,16 @@ def voting(topic_number):
     try:
         arguments = random.sample(displayable_arguments, 3)
     except ValueError:
-        # not enough arguments submitted to vote on (4 minimum)
+        # not enough arguments submitted to vote on (3 minimum)
         flash("There\'s not enough arguments to vote on for this motion. Check back soon!")
         return redirect(url_for('home'))
+    if request.method == 'POST' and form.validate_on_submit() is False:
+        # Form error
+        # Keep the same arguments (arg IDs stored in session) until user puts in valid input
+        first_orig_arg = Argument.query.filter(Argument.id == session['argument_ids'][0])[0]
+        second_orig_arg = Argument.query.filter(Argument.id == session['argument_ids'][1])[0]
+        third_orig_arg = Argument.query.filter(Argument.id == session['argument_ids'][2])[0]
+        arguments = [first_orig_arg, second_orig_arg, third_orig_arg]        
     topic = db.session.query(Topic).filter_by(id = topic_number)[0]
     session['argument_ids'] = [argument.id for argument in arguments]
     comments_query = db.session.query(User, ArgumentComment).join(ArgumentComment).filter(ArgumentComment.argument_id.in_(session['argument_ids'])).order_by(ArgumentComment.argument_id, ArgumentComment.created_datetime.desc()).all()
@@ -414,108 +452,11 @@ def voting(topic_number):
     user_status = session['user_status']
     topics = db.session.query(func.count(Topic.id)).filter_by(status = True).all()[0][0]
     randnum = random.choice(range(1, topics + 1))
-       
-    return render_template("vote_argument.html", user_status=user_status, all_arguments=all_arguments, topic=topic, other_user_motions=other_user_motions, randnum=randnum, user_points=user_points)
+    return render_template("vote_argument.html", form=form, user_status=user_status, all_arguments=all_arguments, topic=topic, other_user_motions=other_user_motions, randnum=randnum, user_points=user_points)     
 
-@app.route('/scoring2', methods=['GET'])
-@login_required
-def scoring2():
-    user_points = get_user_points()
-    category_filter = request.args.get('category_value', 'all')
-    categories = db.session.query(Topic.category).distinct()
-    user_motions = Motion.query.filter_by(user_id = session['user_id']).all()
-    motion_ids = [motion.id for motion in user_motions]
-    user_topics = [motion.topic_id for motion in user_motions]
-    arguments = db.session.query(Argument).filter(Argument.motion_id.in_(motion_ids))
-    motions = []
-    for motion in user_motions:
-        arguments = db.session.query(Argument).filter(Argument.motion_id == motion.id)
-        topic = db.session.query(Topic).filter(Topic.id == motion.topic_id)
-        motions.append([topic, arguments])
-    # print request.form.getlist('choice')
-    for motion in motions:
-        print "topic is...", motion[0][0]
-        print "arguments are..."
-        for m in motion[1]:
-            print m
-        print "..........."
-    return render_template("scoring2.html", user_points=user_points, categories=categories, motions=motions)    
-  
-@app.route('/scoring/<int:topic_id>', methods=['GET'])
-@login_required    
-def scoring(topic_id):
-    user_motion = db.session.query(Motion).filter_by(topic_id = topic_id, user_id = session['user_id']).all()
-    user_proargument = Argument.query.join(Motion, User).filter(Motion.topic_id == topic_id, User.id == session['user_id'], Argument.procon == True).all()[0]
-    user_proargument_votes = db.session.query(func.count(Vote.id)).filter_by(argument_id = user_proargument.id).all()[0][0]
-    user_proargument_avgvotes = round(db.session.query(func.avg(Vote.value)).filter_by(argument_id = user_proargument.id).all()[0][0], 1) if user_proargument_votes > 0 else 0
-    user_conargument = Argument.query.join(Motion, User).filter(Motion.topic_id == topic_id, User.id == session['user_id'], Argument.procon == False).all()[0]
-    user_conargument_votes = db.session.query(func.count(Vote.id)).filter_by(argument_id = user_conargument.id).all()[0][0]
-    user_conargument_avgvotes = round(db.session.query(func.avg(Vote.value)).filter_by(argument_id = user_conargument.id).all()[0][0], 1) if user_conargument_votes > 0 else 0
-        
-    if user_motion == []:
-        flash('You need to submit arguments for this motion in order to have scores!')
-        return redirect(url_for('add_arguments'))
-        
-    user_motion = user_motion[0]
-  
-    if user_motion.user_procon == True:
-        user_turing_argument = db.session.query(Argument.id).filter_by(motion_id = user_motion.id, procon = False)
-        user_position = "for"
-        opposite_arguments = Argument.query.join(Motion, User).filter(Motion.topic_id == topic_id, User.id != session['user_id'], Motion.user_procon == False, Argument.procon == True).all()
-    else:
-        user_turing_argument = db.session.query(Argument.id).filter_by(motion_id = user_motion.id, procon = True)
-        user_position = "against"
-        opposite_arguments = Argument.query.join(Motion, User).filter(Motion.topic_id == topic_id, User.id != session['user_id'], Motion.user_procon == True, Argument.procon == False).all()
-        
-    opposite_argument_ids = [argument.id for argument in opposite_arguments]
-    other_turing_votes = db.session.query(func.count(Vote.id)).filter(Vote.argument_id.in_(opposite_argument_ids)).all()[0][0]
-    user_turing_votes = db.session.query(func.count(Vote.id)).filter(Vote.argument_id.in_(user_turing_argument))[0][0]
-    user_turing_score = round(db.session.query(func.avg(Vote.value)).filter(Vote.argument_id.in_(user_turing_argument))[0][0], 1) if user_turing_votes > 0 else 0
-    opposite_votes = db.session.query(func.count(Vote.id)).filter(Vote.argument_id.in_(opposite_argument_ids))[0][0]
-    opposite_avgvotes = db.session.query(Vote.argument_id, func.avg(Vote.value)).filter(Vote.argument_id.in_(opposite_argument_ids)).group_by(Vote.argument_id)
-    percentile_ranking = round((len([avgvote[1] for avgvote in opposite_avgvotes if round(avgvote[1], 2) < round(user_turing_score, 2)]) / len([avgvote[1] for avgvote in opposite_avgvotes]))*100, 1) if opposite_votes > 0 else 0
-    opp_lower_bound = round(average([i[1] for i in opposite_avgvotes]) - std([i[1] for i in opposite_avgvotes]), 1) if opposite_votes > 0 else 0
-    opp_upper_bound = round(std([i[1] for i in opposite_avgvotes]) + average([i[1] for i in opposite_avgvotes]), 1) if opposite_votes > 0 else 0
-  
-    current_topic = Topic.query.get(topic_id)
-    
-    update_topic_status()
-    other_topics = Topic.query.join(Motion, User).filter(Motion.topic_id != topic_id, User.id == session['user_id']).all()
-    other_categories = db.session.query(Topic.category).distinct()
-    user_available_motions = [{} for x in xrange(len(list(other_categories)))]
-    for index, cat in enumerate(other_categories):
-        temp_list = []
-        for top in other_topics:
-            if str(cat[0]) == str(top.category):
-                temp_list.append(top)
-            else:
-                pass
-        user_available_motions[index][str(cat[0])] = temp_list   
-    other_user_motions = [i for i in user_available_motions if i.values()[0] != []]
-    
-    user_topics = db.session.query(Topic.id).join(Motion).filter(Motion.user_id == session['user_id'], Topic.status == True)
-    user_topics = [top[0] for top in user_topics]
-    randnum = random.sample(user_topics, 1)[0]
-    
-    return render_template("scoring.html",
-        current_topic=current_topic,
-        user_position=user_position,
-        user_proargument=user_proargument,
-        user_proargument_votes=user_proargument_votes,
-        user_proargument_avgvotes=user_proargument_avgvotes,
-        user_conargument=user_conargument,
-        user_conargument_votes=user_conargument_votes,
-        user_conargument_avgvotes=user_conargument_avgvotes,
-        opp_lower_bound=opp_lower_bound,
-        opp_upper_bound=opp_upper_bound,
-        other_turing_votes=other_turing_votes,
-        percentile_ranking=percentile_ranking,
-        other_user_motions=other_user_motions,
-        randnum=randnum
-        )
-        
-       
+
 @app.route('/turingarguments/topic/<int:topic_id>/topscoring', methods=['GET'])
+@login_required
 def top_turing_args(topic_id):
     current_topic = Topic.query.get(topic_id)    
 
@@ -606,6 +547,7 @@ def login():
             return redirect(url_for('home'))
         else:
             error = 'Invalid username or password.'            
+    # return render_template('login.html', form=form)
     return render_template('login.html', form=form, error=error)
 
 @app.route('/logout')
@@ -626,9 +568,9 @@ def update_topic_status():
             updated_topic.status = False
             db.session.commit()
 
-@app.route('/test', methods=['GET'])
+@app.route('/scoring', methods=['GET'])
 @login_required            
-def test():
+def scoring():
     user_motions = Motion.query.filter_by(user_id = session['user_id']).all()
     user_topic_ids = [motion.topic_id for motion in user_motions] 
     
@@ -701,7 +643,8 @@ def test():
     opp_turing_avg = round(db.session.query(func.avg(Vote.value)).filter(Vote.argument_id.in_(opponent_turing_args_ids))[0][0], 2)
     user_true_percentile = round(((float(len([round(avg[1], 2) for avg in opp_turing_arg_votes if round(avg[1], 2) < user_true_avg])) / len(opp_turing_arg_votes))*100), 1)
     summary_statistics = [user_turing_votes, user_turing_avg, opp_true_avg, user_turing_percentile, user_true_votes, user_true_avg, opp_turing_avg, user_true_percentile]
-    return render_template('test.html', motions = motions, categories = categories, summary_statistics = summary_statistics)
+    user_points = get_user_points()
+    return render_template('scoring.html', motions = motions, categories = categories, summary_statistics = summary_statistics, user_points = user_points)
  
 if __name__ == '__main__':
     app.run(debug=True)

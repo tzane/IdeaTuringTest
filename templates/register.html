@@ -9,27 +9,50 @@
       <h1>The Political Turing Test
       <br>
       <h2>Registration</h2>
-
-      <form action="" method="post">
-        <div>
-        <input type="text" placeholder="Name" name="name" value="{{ 
-          request.form.name }}">
-        </div>
-        <div>
-         <input type="text" placeholder="E-mail" name="email" value="{{ 
-          request.form.email }}">
-        </div>
-        <div>
-         <input type="password" placeholder="Password" name="password" value="{{ 
-          request.form.password }}">
-        </div>
-        <input class="btn btn-default" type="submit" value="Register">
-      </form>
-      {% for message in get_flashed_messages() %}
-        <strong><i>--{{ message }}--</i></strong>
-      {% endfor %}
-      <p>Click <a href="/login">here</a> to login if you already have an account.</p>
-      <p>Click <a href="/">here</a> to return home.</p>
-    </div>
+      <br>
+    <form class="form-signin" role="form" method="post" action="">
+      {{ form.csrf_token }}
+      <p>
+        {{ form.username(placeholder="Username") }}
+        <span class="error">
+          {% if form.username.errors %}
+            {% for error in form.username.errors %}
+              {{ error }}
+            {% endfor %}
+          {% endif %}
+        </span>
+      </p>
+      <p>
+      {{ form.email(placeholder="E-mail") }}
+        <span class="error">
+          {% if form.email.errors %}
+            {% for error in form.email.errors %}
+              {{ error }}
+            {% endfor %}
+          {% endif %}
+        </span>
+      </p>
+      <p>
+      {{ form.password(placeholder="Password") }}
+        <span class="error">
+          {% if form.password.errors %}
+            {% for error in form.password.errors %}
+              {{ error }}
+            {% endfor %}
+          {% endif %}
+        </span>
+      </p>
+      <p>
+      {{ form.confirm(placeholder="Confirm password") }}
+        <span class="error">
+          {% if form.confirm.errors %}
+            {% for error in form.confirm.errors %}
+              {{ error }}
+            {% endfor %}
+          {% endif %}
+        </span>
+      </p>
+      <button class="btn btn-sm btn-success" type="submit">Register</button>
+    </form>
   </body>
 </html>
