@@ -15,14 +15,14 @@
         Your total points:<span class="badge">{{ user_points }}</span></a><br>
       </p>
       <br>
-      <p>{% for message in get_flashed_messages() %}
+<!--       <p>{% for message in get_flashed_messages() %}
            <strong><i>--{{ message }}--</i></strong>
-         {% endfor %}
+         {% endfor %} -->
       </p>
-      <p>Click <a href="/logout">here</a> to logout.</p>
-      <p>Click <a href="/">here</a> to go to the home page.</p>
-      <p>Click <a href="/arguments">here</a> to enter into an active debate and add your arguments.</p>
-      <p>Click <a href="/turingarguments/topic/{{ randnum }}/topscoring">here</a> to view the highest rated turing arguments.</p>
+      <p><a href="/logout">Logout.</a></p>
+      <p><a href="/">Return home.</a></p>
+      <p><a href="/arguments">Enter into an active debate and add your arguments.</a></p>
+      <p><a href="/turingarguments/topic/{{ randnum }}/topscoring">View the highest rated turing arguments.</a></p>
       <br><br>
       {% if user_status %}
       <h3>Vote on the best arguments <strong><u>for</u></strong> the motion "{{ topic.topic }}"</h3>
@@ -30,7 +30,12 @@
       <h3>Vote on the best arguments <strong><u>against</u></strong> the motion "{{ topic.topic }}"</h3>
       {% endif %}
       <li>There are {{ topic.days_left() }} days remaining until this motion becomes inactive and closed.</li>
-      <br><br>
+      <br>
+      <p>{% for message in get_flashed_messages() %}
+           <strong><i>--{{ message }}--</i></strong>
+         {% endfor %}
+      </p>
+      <br>
       <form action="" method="post">
       {{ form.csrf_token }}
       {% for arg in all_arguments %}

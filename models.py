@@ -20,7 +20,7 @@ class ProposedTopic(db.Model):
         self.topic = topic
         self.author_id = author_id
         
-    # Update interger below to actual time allowance
+    # Update integer below to actual time allowance
     def days_left(self):
         days_remaining = 20 - (datetime.date.today() - self.created_date).days
         if days_remaining > 1:

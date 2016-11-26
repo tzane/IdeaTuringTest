@@ -17,7 +17,7 @@ db.session.add(Topic("International Relations", "The immediate re-militarization
 db.session.add(Topic("Economy", "Something something about the economy.", 2, True)) 
 db.session.add(Topic("Environment", "Something something about the environment.", 5, True))
 db.session.add(Topic("International Relations", "Something something about international relations.", 3, True))
-db.session.add(Topic("Environment", "Something about the Kyoto Protocol.", 1, False))
+db.session.add(Topic("Environment", "Something about the Kyoto Protocol.", 1, True))
 
 db.session.add(ProposedTopic("Environment", "Something about the environment at the G8 summit.", 1))
 db.session.add(ProposedTopic("International Relations", "The TPP deal will ultimately benefit everyone and should be ratified immediately.", 2))
@@ -207,6 +207,12 @@ db.session.add(Vote(21, 21, randint(1,10), 5))
 db.session.add(Vote(22, 22, randint(1,10), 5))
 db.session.add(Vote(23, 23, randint(1,10), 5))
 db.session.add(Vote(24, 24, randint(1,10), 5))
+
+db.session.add(Vote(46, 21, randint(1,10), 2))
+db.session.add(Vote(46, 21, randint(1,10), 2))
+db.session.add(Vote(48, 23, randint(1,10), 2))
+db.session.add(Vote(49, 24, randint(1,10), 2))
+db.session.add(Vote(50, 25, randint(1,10), 2))
 
 #commit
 db.session.commit()

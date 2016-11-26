@@ -24,11 +24,11 @@
       <h2>Vote on Proposed Motions</h2>
       <p>Vote on these motions something something SOMETHING</p>
       <div class="container">
-          <p>Click <a href="/logout">here</a> to logout.</p>
-          <p>Click <a href="/">here</a> to return home.</p>
-          <p>Click <a href="/arguments">here</a> to add your arguments to a new debate.</p>
-          <p>Click <a href="/voting/{{ randnum }}">here</a> vote on arguments.</p>
-          <p>Click <a href="/scoring/{{ user_randtop }}">here</a> to view how your arguments are scoring.</p>
+          <p><a href="/logout">Logout.</a></p>
+          <p><a href="/">Return home.</a></p>
+          <p><a href="/arguments">Enter into an active debate and add your own arguments.</a></p>
+          <p><a href="/voting/{{ randnum }}">Vote on arguments.</a></p>
+          <p><a href="/scoring/{{ user_randtop }}">View how your arguments are scoring.</a></p>
       </div>
       <div class="container">
         <h3>The motion: <i>"{{ proposed_topic.topic }}"</i></h3>
@@ -83,15 +83,17 @@
       <h3><strong>Vote on these other proposed motions by category:</strong></h3>
     </div>
     {% for props in other_prop_topics %}
-    <div class="container">
-      <h4>{{ props.keys()[0] }}</h4>
-      <ul>
-        {% for props in props.values()[0] %}
-        <li><a href="/vote-motion/{{ props[0].id }}">{{ props[0] }}</a> {{ props[1] }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-      {% endfor %}
+      {% if props.values()[0] != [] %}
+      <div class="container">
+        <h4>{{ props.keys()[0] }}</h4>
+        <ul>
+          {% for props in props.values()[0] %}
+          <li><a href="/vote-motion/{{ props.id }}">{{ props }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    {% endfor %}
   </body>  
 </html>
  

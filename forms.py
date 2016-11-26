@@ -49,10 +49,15 @@ class ArgumentsForm(Form):
         'Con argument',
         validators=[DataRequired(), Length(min=80, max=650)],
     )
+    
+class ProposedTopicForm(Form):
+    # Uncomment below when users can write-in multiple keyword categories in production version
+    # category = StringField('category', validators=[DataRequired(), Length(min=5, max=35)])
+    proposed_topic = StringField('proposed_topic', validators=[DataRequired(), Length(min=15, max=200)])
 
 class VoteArgumentsForm(Form):
     first_vote = SelectField('first vote', choices=[(0,'-'),(1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8),(9,9),(10,10)], default=0, validators=[DataRequired(), NumberRange(min=1,max=10, message="Please pick a number!")], coerce=int)
-    first_comment = StringField('first comment', validators=[Optional()])
+    # first_comment = StringField('first comment', validators=[Optional()])
     second_vote = SelectField('second vote', choices=[(0,'-'),(1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8),(9,9),(10,10)], default=0, validators=[DataRequired(), NumberRange(min=1,max=10, message="Please pick a number!")], coerce=int)
     # second_comment = StringField('second comment', validators=[Optional()])
     third_vote = SelectField('third vote', choices=[(0,'-'),(1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8),(9,9),(10,10)], default=0, validators=[DataRequired(), NumberRange(min=1,max=10, message="Please pick a number!")], coerce=int)

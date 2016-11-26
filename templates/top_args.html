@@ -19,11 +19,11 @@
       <h2>Top Turing Arguments</h2>
       <p>Here's the highest rated turing arguments for each side..</p>
       <div class="container">
-          <p>Click <a href="/logout">here</a> to logout.</p>
-          <p>Click <a href="/">here</a> to return home.</p>
-          <p>Click <a href="/arguments">here</a> to add your arguments to a new debate.</p>
-          <p>Click <a href="/voting/{{ randnum }}">here</a> vote on arguments.</p>
-          <p>Click <a href="/scoring/{{ user_randtop }}">here</a> to view how your arguments are scoring.</p>
+          <p><a href="/logout">Logout.</a></p>
+          <p><a href="/">Return home.</a></p>
+          <p><a href="/arguments">Enter into an active debate and add your own arguments.</a></p>
+          <p><a href="/voting/{{ randnum }}">Vote on arguments.</a></p>
+          <p><a href="/scoring">View how your arguments are scoring.</a></p>
       </div>
       <h3>The motion: <i>"{{ current_topic.topic }}"</i></h3>
         <form action="" method="get">
@@ -41,7 +41,7 @@
         </div>
         </form>
         <div class="form-group argument-box clearfix">
-          <h3 class="argument-box-header">Top {{ ranking }} rated turing arguments <strong>for</strong> the motion:</h3>
+          <h3 class="argument-box-header">Top rated turing arguments <strong>for</strong> the motion:</h3>
         </div>
         {% for arg in con_args %}
         <h4><i># {{ arg[0] }}</i></h4>
@@ -59,7 +59,7 @@
         </div>
         {% endfor %}
         <div class="form-group argument-box clearfix">
-          <h3 class="argument-box-header">Top {{ ranking }} rated turing arguments <strong>against</strong> the motion:</h3>
+          <h3 class="argument-box-header">Top rated turing arguments <strong>against</strong> the motion:</h3>
         </div>
         {% for arg in pro_args %}
         <h4><i># {{ arg[0] }}</i></h4>
