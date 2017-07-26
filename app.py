@@ -18,6 +18,7 @@ import os
 
 app.secret_key = "my precious"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///arguments.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Create the sqlalchemy object
 db = SQLAlchemy(app)
@@ -456,7 +457,6 @@ def voting(topic_number):
     else:
         session['user_status'] = False
         displayable_arguments = Argument.query.join(Motion, Topic).filter(Argument.procon == False, Topic.id == topic_number, Topic.status == True).all()
-        print displayable_arguments
     displayable_arguments = [arg for arg in displayable_arguments if arg.author_id != session['user_id']]
     arguments = displayable_arguments
     try:
