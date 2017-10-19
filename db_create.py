@@ -1,5 +1,5 @@
-from app import db, bcrypt
-from models import User, Topic, Motion, Argument, Vote, ProposedTopic, ProposedTopicVote, ProposedTopicComment, ArgumentComment
+from project import db, bcrypt
+from project.models import User, Topic, Motion, Argument, Vote, ProposedTopic, ProposedTopicVote, ProposedTopicComment, ArgumentComment
 import datetime
 from random import randint
 

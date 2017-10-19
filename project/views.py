@@ -1,30 +1,14 @@
-from flask import Flask, render_template, redirect, url_for, request, session, flash, g, send_from_directory, jsonify
-from flask_restful import reqparse
-from flask.ext.sqlalchemy import SQLAlchemy
-from flask.ext.bcrypt import Bcrypt
+from flask import render_template, redirect, url_for, request, session, flash, g, send_from_directory, jsonify
 from functools import wraps
 from forms import LoginForm, RegisterForm, ArgumentsForm, VoteArgumentsForm, ProposedTopicForm
-from sqlalchemy.sql import func, expression
-from sqlalchemy.orm import aliased
-from numpy import average, std
+from sqlalchemy.sql import func
 import random
+from models import *
+import datetime
 from operator import itemgetter
 import datetime
-
-app = Flask(__name__)
-bcrypt = Bcrypt(app)
-
-import os
-
-app.secret_key = "my precious"
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///arguments.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Create the sqlalchemy object
-db = SQLAlchemy(app)
-
-# Import all model objects
-from models import *
+from project.models import bcrypt
+from project import app
 
 @app.route('/')
 def home():
@@ -676,6 +660,3 @@ def scoring():
     summary_statistics = [user_turing_votes, user_turing_avg, opp_true_avg, user_turing_percentile, user_true_votes, user_true_avg, opp_turing_avg, user_true_percentile]
     user_points = get_user_points()
     return render_template('scoring.html', motions = motions, categories = categories, summary_statistics = summary_statistics, user_points = user_points)
- 
-if __name__ == '__main__':
-    app.run(debug=True)
